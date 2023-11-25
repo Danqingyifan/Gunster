@@ -16,10 +16,9 @@ void AGunsterPlayerController::BeginPlay()
 
 	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 	{
-		Subsystem->AddMappingContext(HumanMappingContext, 0);
+		Subsystem->AddMappingContext(GravesMappingContext, 0);
 	}
 
-	UE_LOG(LogTemp, Display, TEXT("Using Controller"));
 }
 
 void AGunsterPlayerController::SetupInputComponent()

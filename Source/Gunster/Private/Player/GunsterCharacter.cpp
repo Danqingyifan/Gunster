@@ -2,6 +2,7 @@
 
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
+#include "Items/Weapon/Weapon.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,20 +11,20 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
-
+#include "Engine/SkeletalMeshSocket.h"
 
 AGunsterCharacter::AGunsterCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-	
+
 	//if use Controller Rotate
 	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
+	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
 
 	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = true; 
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 
 	//CharacterMovement Argument Setting
@@ -41,30 +42,44 @@ AGunsterCharacter::AGunsterCharacter()
 
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); 
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	
+
 }
 
 void AGunsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	RightHandGun = GetMesh()->GetSocketByName("hand_rSocket");
+	LeftHandGun = GetMesh()->GetSocketByName("hand_lSocket");
 
+	//HoldingWeapon = GetWorld()->SpawnActor(HoldingWeaponClass, RightHandGun->GetSocketTransform(), &Rotation);
+
+	if (HoldingWeapon && RightHandGun)
+	{
+		
+	}
 }
 // Input
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
 	if (AGunsterPlayerController* GunsterController = Cast<AGunsterPlayerController>(Controller))
-	{	
+	{
 		if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 		{
-
-			EnhancedInputComponent->BindAction(GunsterController->JumpAction, ETriggerEvent::Triggered, this, &ACharacter::Jump);
-			EnhancedInputComponent->BindAction(GunsterController->JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+			//No Jump Action For Graves
 
 			EnhancedInputComponent->BindAction(GunsterController->MoveAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Move);
-			
+
 			EnhancedInputComponent->BindAction(GunsterController->LookAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Look);
+
+			EnhancedInputComponent->BindAction(GunsterController->TriggerAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Trigger);
+
+			EnhancedInputComponent->BindAction(GunsterController->DodgeAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Dodge);
+
+			EnhancedInputComponent->BindAction(GunsterController->TriggerAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Trigger);
 		}
 	}
 
@@ -84,7 +99,6 @@ void AGunsterCharacter::Move(const FInputActionValue& Value)
 		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
 		// add movement 
@@ -104,6 +118,25 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void AGunsterCharacter::Trigger()
+{
+	if (HoldingWeapon)
+	{
+		HoldingWeapon->Fire();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Display, TEXT("No Weapon"));
+	}
+}
 
+void AGunsterCharacter::Dodge()
+{
 
+}
+
+void AGunsterCharacter::Sprint()
+{
+
+}
 
