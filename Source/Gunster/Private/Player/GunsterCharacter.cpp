@@ -50,7 +50,6 @@ void AGunsterCharacter::BeginPlay()
 	Super::BeginPlay();
 	RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
 	LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
-	DefaultWeaponClass = 
 	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
 	if (DefaultWeaponClass && LeftHandSocket && RightHandSocket)
 	{
@@ -63,7 +62,9 @@ void AGunsterCharacter::BeginPlay()
 		{
 			HoldingWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocket->SocketName);
 			HoldingWeapon->SetOwner(this);
+			HoldingWeapon->SetActorEnableCollision(false);
 		}
+		//ignore the collision of HoldingWeapon
 	}
 }
 // Input

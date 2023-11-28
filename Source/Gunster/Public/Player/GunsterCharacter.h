@@ -34,6 +34,7 @@ public:
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 private:
 	//Weapon Segment
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AWeapon> DefaultWeaponClass;
 	const class USkeletalMeshSocket* RightHandSocket;
 	const class USkeletalMeshSocket* LeftHandSocket;
