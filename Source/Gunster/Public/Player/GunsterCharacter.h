@@ -16,18 +16,6 @@ class AGunsterCharacter : public ACharacter
 public:
 	AGunsterCharacter();
 
-private:
-
-	//Camera Segment
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-		class USpringArmComponent* CameraBoom;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-		class UCameraComponent* FollowCamera;
-
-	//Weapon Segment
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-		TSubclassOf<class AWeapon> HoldingWeaponClass;
-
 protected:
 	// Action Segment
 	void Move(const FInputActionValue& Value);
@@ -35,6 +23,7 @@ protected:
 	void Trigger();
 	void Dodge();
 	void Sprint();
+	void Reload();
 protected:
 	virtual void BeginPlay();
 
@@ -44,8 +33,17 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 private:
-	const class USkeletalMeshSocket* RightHandGun;
-	const class USkeletalMeshSocket* LeftHandGun;
+	//Weapon Segment
+	TSubclassOf<class AWeapon> DefaultWeaponClass;
+	const class USkeletalMeshSocket* RightHandSocket;
+	const class USkeletalMeshSocket* LeftHandSocket;
 	class AWeapon* HoldingWeapon;
+
+private:
+	//Camera Segment
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class USpringArmComponent* CameraBoom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* FollowCamera;
 };
 

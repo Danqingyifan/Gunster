@@ -6,9 +6,6 @@
 #include "Animation/AnimInstance.h"
 #include "GunsterAnimInstance.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class GUNSTER_API UGunsterAnimInstance : public UAnimInstance
 {
@@ -27,4 +24,5 @@ private:
 	float JogSpeed;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
 	float YawOffset;
+
 };

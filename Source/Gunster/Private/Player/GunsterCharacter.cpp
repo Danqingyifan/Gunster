@@ -15,9 +15,6 @@
 
 AGunsterCharacter::AGunsterCharacter()
 {
-	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-
 	//if use Controller Rotate
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
@@ -37,7 +34,7 @@ AGunsterCharacter::AGunsterCharacter()
 	// Create a camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character	
+	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character
 	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
 
 	// Create a follow camera
@@ -51,14 +48,22 @@ AGunsterCharacter::AGunsterCharacter()
 void AGunsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	RightHandGun = GetMesh()->GetSocketByName("hand_rSocket");
-	LeftHandGun = GetMesh()->GetSocketByName("hand_lSocket");
-
-	//HoldingWeapon = GetWorld()->SpawnActor(HoldingWeaponClass, RightHandGun->GetSocketTransform(), &Rotation);
-
-	if (HoldingWeapon && RightHandGun)
+	RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
+	LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
+	DefaultWeaponClass = 
+	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
+	if (DefaultWeaponClass && LeftHandSocket && RightHandSocket)
 	{
-		
+		FTransform SocketTransform = GetMesh()->GetSocketTransform(LeftHandSocket->SocketName);
+		FActorSpawnParameters SpawnInfo;
+		FVector SpawnLocation = SocketTransform.GetLocation();
+		FRotator SpawnRotation = SocketTransform.GetRotation().Rotator();
+		HoldingWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass,SpawnLocation,SpawnRotation,SpawnInfo);
+		if (HoldingWeapon)
+		{
+			HoldingWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocket->SocketName);
+			HoldingWeapon->SetOwner(this);
+		}
 	}
 }
 // Input
@@ -79,13 +84,13 @@ void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 			EnhancedInputComponent->BindAction(GunsterController->DodgeAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Dodge);
 
-			EnhancedInputComponent->BindAction(GunsterController->TriggerAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Trigger);
+			EnhancedInputComponent->BindAction(GunsterController->SprintAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Sprint);
+
+			EnhancedInputComponent->BindAction(GunsterController->ReloadAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Reload);
 		}
 	}
 
 }
-
-
 
 
 void AGunsterCharacter::Move(const FInputActionValue& Value)
@@ -101,7 +106,7 @@ void AGunsterCharacter::Move(const FInputActionValue& Value)
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-		// add movement 
+		// add movement
 		AddMovementInput(ForwardDirection, MovementVector.Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
@@ -136,6 +141,11 @@ void AGunsterCharacter::Dodge()
 }
 
 void AGunsterCharacter::Sprint()
+{
+
+}
+
+void AGunsterCharacter::Reload()
 {
 
 }

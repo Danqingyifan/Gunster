@@ -30,7 +30,8 @@ void AWeapon::Tick(float DeltaTime)
 }
 
 void AWeapon::Fire()
-{
+{	
+	UE_LOG(LogTemp, Warning, TEXT("Fire"));
 	if (FireSound)
 	{
 		UGameplayStatics::PlaySound2D(this, FireSound);
