@@ -24,5 +24,4 @@ private:
 	float JogSpeed;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
 	float YawOffset;
-
 };

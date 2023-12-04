@@ -37,4 +37,14 @@ private:
 	class UParticleSystem* ImpactFlash;
 public:
 	void Fire();
+
+private:
+	//Sounds and VFXs
+	void PlayFireSound();
+	void PlayFireVFX();
+	void PlayImpactVFX(FHitResult& HitResult);
+
+
+	void TraceLine();
+
 };
