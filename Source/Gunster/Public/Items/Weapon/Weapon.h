@@ -52,11 +52,14 @@ private:
 	void Fire();
 	void TrackTrajectory();
 	void ResetFire();
-	//void StartFireTimer(); Attempt to use Lambda Delegate
+	
+	//Init Delegate Lambda
+	void InitDelegates();
 private:
 	//for weapon firing
 	bool bShouldFire;  //When Player Triggering is True
 	bool bCanFire;	//When Gun is Ready to Fire is True
 	float FireRate;
 	FTimerHandle FireTimerHandle;
+	FTimerDelegate ResetFireTimerDelegate;
 };

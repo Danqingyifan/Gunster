@@ -15,19 +15,19 @@
 #include "TimerManager.h"
 
 AWeapon::AWeapon()
-	:bCanFire(true),bShouldFire(false),FireRate(0.1f) // Fire Params Init
+	:bShouldFire(false), bCanFire(true),FireRate(0.1f) // Fire Params Init
 {
 	PrimaryActorTick.bCanEverTick = true;
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
 	MuzzlePosition = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzlePosition"));
 	SetRootComponent(WeaponMesh);
 	MuzzlePosition->SetupAttachment(RootComponent);
-	
 }
 
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+	InitDelegates();
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -35,7 +35,7 @@ void AWeapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-
+//API
 void AWeapon::StartFire()
 {
 	bShouldFire = true;
@@ -48,6 +48,14 @@ void AWeapon::StopFire()
 	bShouldFire = false;
 }
 
+void AWeapon::ReloadMagazine()
+{
+
+}
+
+
+
+// Implementation
 void AWeapon::TrackTrajectory()
 {
 	FVector CrossHairWorldPosition;
@@ -94,13 +102,15 @@ void AWeapon::Fire()
 		TrackTrajectory();
 		bCanFire = false;
 
+		//Using Lambda Delegate
 		GetWorld()->GetTimerManager().SetTimer
 		(
 			FireTimerHandle,
-			this,
-			&AWeapon::ResetFire,
-			FireRate
+			ResetFireTimerDelegate,
+			FireRate,
+			false
 		);
+
 	}
 }
 void AWeapon::ResetFire()
@@ -111,15 +121,15 @@ void AWeapon::ResetFire()
 	}
 }
 
-/*
-void AWeapon::StartFireTimer()
-{
-	FTimerDelegate FireDelegate;
-	FireDelegate.BindLambda([this]() {
-		bShouldFire = true;
+void AWeapon::InitDelegates()
+{	
+	//Reset Fire
+	ResetFireTimerDelegate.BindLambda([this]() {
+		bCanFire = true;
 	});
+
 }
-*/
+
 
 void AWeapon::PlayFireSound()
 {
