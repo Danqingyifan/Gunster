@@ -80,7 +80,8 @@ void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 
 			EnhancedInputComponent->BindAction(GunsterController->LookAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Look);
 
-			EnhancedInputComponent->BindAction(GunsterController->TriggerAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Trigger);
+			EnhancedInputComponent->BindAction(GunsterController->TriggerAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::PullTrigger);
+			EnhancedInputComponent->BindAction(GunsterController->TriggerAction, ETriggerEvent::Completed, this, &AGunsterCharacter::ReleaseTrigger);
 
 			EnhancedInputComponent->BindAction(GunsterController->DodgeAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Dodge);
 
@@ -123,15 +124,19 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void AGunsterCharacter::Trigger()
+void AGunsterCharacter::PullTrigger()
 {
 	if (HoldingWeapon)
 	{
-		HoldingWeapon->Fire();
+		HoldingWeapon->StartFire();
 	}
-	else
+}
+
+void AGunsterCharacter::ReleaseTrigger()
+{
+	if (HoldingWeapon)
 	{
-		UE_LOG(LogTemp, Display, TEXT("No Weapon"));
+		HoldingWeapon->StopFire();
 	}
 }
 
@@ -147,6 +152,9 @@ void AGunsterCharacter::Sprint()
 
 void AGunsterCharacter::Reload()
 {
-
+	if (HoldingWeapon)
+	{
+		HoldingWeapon->ReloadMagazine();
+	}
 }
 

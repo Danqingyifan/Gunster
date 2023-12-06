@@ -20,7 +20,8 @@ protected:
 	// Action Segment
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
-	void Trigger();
+	void PullTrigger();
+	void ReleaseTrigger();
 	void Dodge();
 	void Sprint();
 	void Reload();

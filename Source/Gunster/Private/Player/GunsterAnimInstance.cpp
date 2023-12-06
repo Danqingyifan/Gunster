@@ -14,16 +14,24 @@ void UGunsterAnimInstance::NativeInitializeAnimation()
 }
 
 void UGunsterAnimInstance::NativeUpdateAnimation(float DeltaTime)
+{	
+	AimOffsetAnimUpdate();
+	JogAnimUpdate();
+}
+
+void UGunsterAnimInstance::JogAnimUpdate()
 {
 	if (OwningCharacter == nullptr)
 	{
 		OwningCharacter = Cast<AGunsterCharacter>(TryGetPawnOwner());
 	}
 	if (OwningCharacter)
-	{
+	{	
+		//JogSpeed Setup
 		FVector Velocity = OwningCharacter->GetVelocity();
 		Velocity.Z = 0;
 		JogSpeed = Velocity.Size();
+		// if Accelerating
 		if (OwningCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() != 0)
 		{
 			IsAccelerating = true;
@@ -32,18 +40,27 @@ void UGunsterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		{
 			IsAccelerating = false;
 		}
-
 		//YawOffset Setup
-		FRotator AimRotation = OwningCharacter->GetBaseAimRotation();
-		FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(OwningCharacter->GetVelocity());
-		
-		YawOffset = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
+		FRotator MovementRotator = UKismetMathLibrary::MakeRotFromX(OwningCharacter->GetVelocity());
+		FRotator ToOrientationRotator = OwningCharacter->GetActorForwardVector().ToOrientationRotator();
+		JogYawOffset = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotator, ToOrientationRotator).Yaw;
+	}
+}
 
-		FString YawOffsetMessage = FString::Printf(TEXT("YawOffsetMessage: %f"), MovementRotation.Yaw);
-		UE_LOG(LogTemp, Display, TEXT("YawOffsetMessage: %f"), YawOffset);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(1, 0.1f, FColor::White, YawOffsetMessage);
+void UGunsterAnimInstance::AimOffsetAnimUpdate()
+{
+	if (OwningCharacter == nullptr)
+	{
+		OwningCharacter = Cast<AGunsterCharacter>(TryGetPawnOwner());
+	}
+	if (OwningCharacter)
+	{	
+		if (AController* Controller = OwningCharacter->GetController())
+		{	
+			FRotator ControlRotator = Controller->GetControlRotation();
+			FRotator ToOrientationRotator = OwningCharacter->GetActorForwardVector().ToOrientationRotator();
+			AimRotation = UKismetMathLibrary::NormalizedDeltaRotator(ControlRotator, ToOrientationRotator);
 		}
 	}
 }
+

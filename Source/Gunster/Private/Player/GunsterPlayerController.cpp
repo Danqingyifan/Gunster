@@ -7,6 +7,8 @@
 #include "Components/InputComponent.h"
 #include "GameFramework/HUD.h"
 #include "Kismet/GameplayStatics.h"
+#include "Camera/PlayerCameraManager.h"
+#include "GameFramework/Character.h"
 
 AGunsterPlayerController::AGunsterPlayerController()
 {
@@ -16,22 +18,22 @@ AGunsterPlayerController::AGunsterPlayerController()
 void AGunsterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
-	{
-		Subsystem->AddMappingContext(GravesMappingContext, 0);
-	}
-
+	SetupInputComponent();
 }
 
 void AGunsterPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	LimitCameraView();
+	//DrawHUD
 }
 
 void AGunsterPlayerController::SetupInputComponent()
 {
-
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+	{
+		Subsystem->AddMappingContext(GravesMappingContext, 0);
+	}
 }
 
 bool AGunsterPlayerController::DeprojectCrossHairToWorld(FVector& CrossHairWorldPosition, FVector& CrossHairWorldDirection)
@@ -41,15 +43,29 @@ bool AGunsterPlayerController::DeprojectCrossHairToWorld(FVector& CrossHairWorld
 	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize);
 	}
-	FVector2D CrossHairPosition{ ViewportSize.X / 2,ViewportSize.Y / 2 };
+	FVector2D CrossHairScreenLocation{ ViewportSize.X / 2 ,ViewportSize.Y / 2 };
+	CrossHairScreenLocation.X += 30.0f;
+	CrossHairScreenLocation.Y -= 20.0f;
 
 	return UGameplayStatics::DeprojectScreenToWorld
 	(
-		UGameplayStatics::GetPlayerController(this, 0),
-		CrossHairPosition,
+		this,
+		CrossHairScreenLocation,
 		CrossHairWorldPosition,
 		CrossHairWorldDirection
 	);
+}
+
+// Prepared for Aiming
+void AGunsterPlayerController::LimitCameraView()
+{
+	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+	float CharacterOrientation = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetActorForwardVector().Rotation().Yaw;
+
+	Manager->ViewPitchMax = 60.0f;
+	Manager->ViewPitchMin = -60.0f;
+	Manager->ViewYawMax = CharacterOrientation + 95.0f;
+	Manager->ViewYawMin = CharacterOrientation - 95.0f;
 }
 
 

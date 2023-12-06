@@ -36,15 +36,27 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* ImpactFlash;
 public:
-	void Fire();
-
+	//Reload Action
+	void ReloadMagazine();
+	
+	//Fire Action
+	void StartFire();
+	void StopFire();
 private:
 	//Sounds and VFXs
 	void PlayFireSound();
-	void PlayFireVFX();
+	void PlayFireVFX(FVector& EndPoint);
 	void PlayImpactVFX(FHitResult& HitResult);
 
-
-	void TraceLine();
-
+	//Fire
+	void Fire();
+	void TrackTrajectory();
+	void ResetFire();
+	//void StartFireTimer(); Attempt to use Lambda Delegate
+private:
+	//for weapon firing
+	bool bShouldFire;  //When Player Triggering is True
+	bool bCanFire;	//When Gun is Ready to Fire is True
+	float FireRate;
+	FTimerHandle FireTimerHandle;
 };
