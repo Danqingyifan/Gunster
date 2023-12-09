@@ -15,57 +15,15 @@
 
 AGunsterCharacter::AGunsterCharacter()
 {
-	//if use Controller Rotate
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = true;
-	bUseControllerRotationRoll = false;
-
-	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-
-	//CharacterMovement Argument Setting
-	GetCharacterMovement()->JumpZVelocity = 700.f;
-	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
-	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
-
-	// Create a camera boom
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(RootComponent);
-	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character
-	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
-
-	// Create a follow camera
-	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
+	InitConstructor();
 }
 
 void AGunsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
-	LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
-	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
-	if (DefaultWeaponClass && LeftHandSocket && RightHandSocket)
-	{
-		FTransform SocketTransform = GetMesh()->GetSocketTransform(LeftHandSocket->SocketName);
-		FActorSpawnParameters SpawnInfo;
-		FVector SpawnLocation = SocketTransform.GetLocation();
-		FRotator SpawnRotation = SocketTransform.GetRotation().Rotator();
-		HoldingWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass,SpawnLocation,SpawnRotation,SpawnInfo);
-		if (HoldingWeapon)
-		{
-			HoldingWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocket->SocketName);
-			HoldingWeapon->SetOwner(this);
-			HoldingWeapon->SetActorEnableCollision(false);
-		}
-		//ignore the collision of HoldingWeapon
-	}
+	SpawnDefaultWeapon();
 }
+
 // Input
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -126,17 +84,17 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 
 void AGunsterCharacter::PullTrigger()
 {
-	if (HoldingWeapon)
+	if (EquippedWeapon)
 	{
-		HoldingWeapon->StartFire();
+		EquippedWeapon->StartFire();
 	}
 }
 
 void AGunsterCharacter::ReleaseTrigger()
 {
-	if (HoldingWeapon)
+	if (EquippedWeapon)
 	{
-		HoldingWeapon->StopFire();
+		EquippedWeapon->StopFire();
 	}
 }
 
@@ -152,9 +110,69 @@ void AGunsterCharacter::Sprint()
 
 void AGunsterCharacter::Reload()
 {
-	if (HoldingWeapon)
+	if (EquippedWeapon)
 	{
-		HoldingWeapon->ReloadMagazine();
+		EquippedWeapon->ReloadMagazine();
 	}
 }
+
+
+//
+void AGunsterCharacter::SpawnDefaultWeapon()
+{
+	const class USkeletalMeshSocket* RightHandSocket =
+		RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
+
+	const class USkeletalMeshSocket* LeftHandSocket =
+		LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
+
+	if (DefaultWeaponClass && LeftHandSocket && RightHandSocket)
+	{
+		FTransform SocketTransform = GetMesh()->GetSocketTransform(LeftHandSocket->SocketName);
+		FActorSpawnParameters SpawnInfo;
+		FVector SpawnLocation = SocketTransform.GetLocation();
+		FRotator SpawnRotation = SocketTransform.GetRotation().Rotator();
+		EquippedWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass, SpawnLocation, SpawnRotation, SpawnInfo);
+		if (EquippedWeapon)
+		{
+			EquippedWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocket->SocketName);
+			EquippedWeapon->SetOwner(this);
+			//ignore the collision of EquippedWeapon
+			EquippedWeapon->SetActorEnableCollision(false);
+		}
+	}
+}
+
+
+void AGunsterCharacter::InitConstructor()
+{
+	//if use Controller Rotate
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = true;
+	bUseControllerRotationRoll = false;
+
+	// Configure character movement
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+
+	//CharacterMovement Argument Setting
+	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+
+	// Create a camera boom
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	CameraBoom->TargetArmLength = 400.0f; // The camera follows at this distance behind the character
+	CameraBoom->bUsePawnControlRotation = true; // Rotate the arm based on the controller
+
+	// Create a follow camera
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+}
+
+
 

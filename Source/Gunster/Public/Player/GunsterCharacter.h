@@ -13,8 +13,11 @@ class AGunsterCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+//Constructor Segment
 public:
 	AGunsterCharacter();
+private:
+	void InitConstructor();
 
 protected:
 	// Action Segment
@@ -37,9 +40,7 @@ private:
 	//Weapon Segment
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AWeapon> DefaultWeaponClass;
-	const class USkeletalMeshSocket* RightHandSocket;
-	const class USkeletalMeshSocket* LeftHandSocket;
-	class AWeapon* HoldingWeapon;
+	class AWeapon* EquippedWeapon;
 
 private:
 	//Camera Segment
@@ -47,5 +48,9 @@ private:
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+private:
+	void SpawnDefaultWeapon();
+
 };
 
