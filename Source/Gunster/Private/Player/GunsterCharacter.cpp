@@ -15,22 +15,29 @@
 
 AGunsterCharacter::AGunsterCharacter()
 {
+	SetUpControllerRotation();
+	SetUpCamera();
+	SetUpCharacterMovement();
+}
+
+
+void AGunsterCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	InitWeapon();
+}
+//Init Section
+
+void AGunsterCharacter::SetUpControllerRotation()
+{
 	//if use Controller Rotate
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationRoll = false;
+}
 
-	// Configure character movement
-	GetCharacterMovement()->bOrientRotationToMovement = false;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-
-	//CharacterMovement Argument Setting
-	GetCharacterMovement()->JumpZVelocity = 700.f;
-	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
-	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
-
+void AGunsterCharacter::SetUpCamera()
+{
 	// Create a camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -44,29 +51,39 @@ AGunsterCharacter::AGunsterCharacter()
 
 }
 
-void AGunsterCharacter::BeginPlay()
+void AGunsterCharacter::SetUpCharacterMovement()
 {
-	Super::BeginPlay();
+	// Configure character movement
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+
+	//CharacterMovement Argument Setting
+	GetCharacterMovement()->JumpZVelocity = 700.f;
+	GetCharacterMovement()->AirControl = 0.35f;
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+}
+
+void AGunsterCharacter::InitWeapon()
+{
 	RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
 	LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
 	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
 	if (DefaultWeaponClass && LeftHandSocket && RightHandSocket)
 	{
-		FTransform SocketTransform = GetMesh()->GetSocketTransform(LeftHandSocket->SocketName);
-		FActorSpawnParameters SpawnInfo;
-		FVector SpawnLocation = SocketTransform.GetLocation();
-		FRotator SpawnRotation = SocketTransform.GetRotation().Rotator();
-		HoldingWeapon = GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass,SpawnLocation,SpawnRotation,SpawnInfo);
-		if (HoldingWeapon)
+		LeftHoldingWeapon = SpawnWeapon(LeftHandSocket, DefaultWeaponClass);
+		RightHoldingWeapon = SpawnWeapon(RightHandSocket, DefaultWeaponClass);
+
+		if (LeftHoldingWeapon && RightHoldingWeapon)
 		{
-			HoldingWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocket->SocketName);
-			HoldingWeapon->SetOwner(this);
-			HoldingWeapon->SetActorEnableCollision(false);
+			AttachWeapon(LeftHoldingWeapon, LeftHandSocket);
+			AttachWeapon(RightHoldingWeapon, RightHandSocket);
 		}
-		//ignore the collision of HoldingWeapon
 	}
 }
-// Input
+
+// Setup Input Section
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
@@ -126,17 +143,33 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 
 void AGunsterCharacter::PullTrigger()
 {
-	if (HoldingWeapon)
+	if (LeftHoldingWeapon)
 	{
-		HoldingWeapon->StartFire();
+		LeftHoldingWeapon->StartFire();
+	}
+	if (RightHoldingWeapon)
+	{
+		RightHoldingWeapon->StartFire();
 	}
 }
 
 void AGunsterCharacter::ReleaseTrigger()
 {
-	if (HoldingWeapon)
+	if (LeftHoldingWeapon)
 	{
-		HoldingWeapon->StopFire();
+		LeftHoldingWeapon->StopFire();
+	}
+	if (RightHoldingWeapon)
+	{
+		RightHoldingWeapon->StopFire();
+	}
+}
+
+void AGunsterCharacter::Reload()
+{
+	if (LeftHoldingWeapon)
+	{
+		LeftHoldingWeapon->ReloadMagazine();
 	}
 }
 
@@ -150,11 +183,33 @@ void AGunsterCharacter::Sprint()
 
 }
 
-void AGunsterCharacter::Reload()
+void AGunsterCharacter::Dash()
 {
-	if (HoldingWeapon)
+
+}
+
+
+
+
+//Implementation
+AWeapon* AGunsterCharacter::SpawnWeapon(const USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass)
+{
+	FActorSpawnParameters SpawnInfo;
+	FTransform LeftSocketTransform = GetMesh()->GetSocketTransform(Socket->SocketName);
+	FVector SpawnLocation = LeftSocketTransform.GetLocation();
+	FRotator SpawnRotation = LeftSocketTransform.GetRotation().Rotator();
+	return GetWorld()->SpawnActor<AWeapon>(WeaponClass, SpawnLocation, SpawnRotation, SpawnInfo);
+}
+
+void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket* Socket)
+{
+	if (Weapon)
 	{
-		HoldingWeapon->ReloadMagazine();
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket->SocketName);
+		Weapon->SetOwner(this);
+		//ignore the collision of HoldingWeapon against the Character
+		Weapon->SetActorEnableCollision(false);
 	}
+
 }
 

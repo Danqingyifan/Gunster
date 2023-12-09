@@ -17,15 +17,6 @@ public:
 	AGunsterCharacter();
 
 protected:
-	// Action Segment
-	void Move(const FInputActionValue& Value);
-	void Look(const FInputActionValue& Value);
-	void PullTrigger();
-	void ReleaseTrigger();
-	void Dodge();
-	void Sprint();
-	void Reload();
-protected:
 	virtual void BeginPlay();
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -37,9 +28,15 @@ private:
 	//Weapon Segment
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AWeapon> DefaultWeaponClass;
+
 	const class USkeletalMeshSocket* RightHandSocket;
 	const class USkeletalMeshSocket* LeftHandSocket;
-	class AWeapon* HoldingWeapon;
+
+	class AWeapon* LeftHoldingWeapon;
+	class AWeapon* RightHoldingWeapon;
+	
+	bool isSingleHolding;
+	bool isAiming;
 
 private:
 	//Camera Segment
@@ -47,5 +44,37 @@ private:
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
+
+
+//Function Area
+
+//API Part
+protected:
+	// Basic Segment
+	void Move(const FInputActionValue& Value);
+	void Look(const FInputActionValue& Value);
+
+	//Action Segment
+	void Dodge();
+	void Sprint();
+	void Dash();
+
+	//Weapon Segment
+	void PullTrigger();
+	void ReleaseTrigger();
+	void Reload();
+//Init Part
+private: 
+	void InitWeapon();
+	void SetUpControllerRotation();
+	void SetUpCamera();
+	void SetUpCharacterMovement();
+
+
+//Implementation Part
+private:
+	class AWeapon* SpawnWeapon(const class USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass);
+	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
+
 };
 

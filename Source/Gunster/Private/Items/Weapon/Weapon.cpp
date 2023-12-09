@@ -7,21 +7,31 @@
 
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystem.h"
+
 #include "Components/StaticMeshComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/BoxComponent.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "TimerManager.h"
 
 AWeapon::AWeapon()
-	:bShouldFire(false), bCanFire(true),FireRate(0.1f) // Fire Params Init
+	:bShouldFire(false), bCanFire(true), FireRate(0.1f) // Fire Params Init
 {
 	PrimaryActorTick.bCanEverTick = true;
+
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
+	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
 	MuzzlePosition = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzlePosition"));
+
 	SetRootComponent(WeaponMesh);
 	MuzzlePosition->SetupAttachment(RootComponent);
+	CollisionBox->SetupAttachment(RootComponent);
+
+	CollisionBox->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
+	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 }
 
 void AWeapon::BeginPlay()
@@ -39,7 +49,6 @@ void AWeapon::Tick(float DeltaTime)
 void AWeapon::StartFire()
 {
 	bShouldFire = true;
-	bCanFire = true;
 	Fire();
 }
 
@@ -52,8 +61,6 @@ void AWeapon::ReloadMagazine()
 {
 
 }
-
-
 
 // Implementation
 void AWeapon::TrackTrajectory()
@@ -70,7 +77,7 @@ void AWeapon::TrackTrajectory()
 
 	FHitResult CrossHairTrace;
 	FVector CrossHairStart{ CrossHairWorldPosition };
-	FVector CrossHairEnd{ CrossHairWorldPosition + CrossHairWorldDirection * 1'000 };
+	FVector CrossHairEnd{ CrossHairStart + CrossHairWorldDirection * 1'000 };
 	GetWorld()->LineTraceSingleByChannel(CrossHairTrace, CrossHairStart, CrossHairEnd, ECollisionChannel::ECC_Visibility);
 	if (CrossHairTrace.bBlockingHit)
 	{
@@ -79,7 +86,9 @@ void AWeapon::TrackTrajectory()
 
 	FHitResult BarrelTrace;
 	FVector BarrelStart{ MuzzlePosition->GetComponentTransform().GetLocation() };
-	FVector BarrelEnd{ CrossHairEnd };
+	FVector BarrelEnd{ CrossHairEnd + (CrossHairTrace.ImpactPoint - BarrelStart).GetSafeNormal() * 10.f };
+	// Need one extra forward vector to make sure the bullet will hit the target
+
 	GetWorld()->LineTraceSingleByChannel(BarrelTrace, BarrelStart, BarrelEnd, ECollisionChannel::ECC_Visibility);
 
 	FHitResult FireHit{ BarrelTrace };
@@ -90,7 +99,7 @@ void AWeapon::TrackTrajectory()
 	DrawDebugLine(GetWorld(), BarrelStart, BarrelEnd, FColor::Red, false, 3.f);
 	if (FireHit.bBlockingHit)
 	{
-		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 15.f, 24, FColor::Green, false, 3.f);
+		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 15.f, 24, FColor::Green, false, 3.0f);
 		PlayImpactVFX(FireHit);
 	}
 
@@ -113,24 +122,14 @@ void AWeapon::Fire()
 
 	}
 }
-void AWeapon::ResetFire()
-{	
-	if (bShouldFire)
-	{
-		bCanFire = true;
-	}
-}
-
 void AWeapon::InitDelegates()
-{	
+{
 	//Reset Fire
 	ResetFireTimerDelegate.BindLambda([this]() {
 		bCanFire = true;
-	});
+		});
 
 }
-
-
 void AWeapon::PlayFireSound()
 {
 	if (FireSound)

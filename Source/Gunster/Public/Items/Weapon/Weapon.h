@@ -21,10 +21,12 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 private:
-	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Mesh",meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Properties",meta = (AllowPrivateAccess="true"))
 	class UStaticMeshComponent* WeaponMesh;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Properties", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* MuzzlePosition;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Properties", meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* CollisionBox;
 
 	//FX
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
@@ -35,6 +37,13 @@ private:
 	class UParticleSystem* SmokeTrail;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* ImpactFlash;
+
+	//HUD
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* CrossHair;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* WeaponPickUp;
+
 public:
 	//Reload Action
 	void ReloadMagazine();
@@ -51,7 +60,6 @@ private:
 	//Fire
 	void Fire();
 	void TrackTrajectory();
-	void ResetFire();
 	
 	//Init Delegate Lambda
 	void InitDelegates();
