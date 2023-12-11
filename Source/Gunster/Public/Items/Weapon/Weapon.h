@@ -8,48 +8,39 @@
 
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
-{	
+{
 	EWT_Pistol UMETA(DisplayName = "Pistol"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_SMG UMETA(DisplayName = "SMG"),
-	EWT_Rifle UMETA(DisplayName = "Rifle"),
+	EWT_Rifle UMETA(DisplayName = "Rifle")
 };
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
-{	
+{
 	EWS_OnGround UMETA(DisplayName = "OnGround"),
 	EWS_Picking UMETA(DisplayName = "Picking"),
-	EWS_InPackage UMETA(DisplayName = "InPackage"),
-	EWS_Equipped UMETA(DisplayName = "Equipped"),
+	EWS_InBackpack UMETA(DisplayName = "InBackpack"),
+	EWS_Equipped UMETA(DisplayName = "Equipped")
 };
 
-// Character play FiringAction animation According to this state enum
-UENUM(BlueprintType)
-enum class EFireState : uint8
-{	
-	EFS_Idle UMETA(DisplayName = "Idle"),
-	EFS_Firing UMETA(DisplayName = "Firing"),
-	EFS_Reloading UMETA(DisplayName = "Reloading"),
-	EFS_Equipping UMETA(DisplayName = "Equipping"),
-};
 
 UCLASS()
 class GUNSTER_API AWeapon : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	AWeapon();
 
 protected:
 	virtual void BeginPlay() override;
 
-public:	
+public:
 	virtual void Tick(float DeltaTime) override;
-	
+
 private:
-	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category="Properties",meta = (AllowPrivateAccess="true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Properties", meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* WeaponMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Properties", meta = (AllowPrivateAccess = "true"))
 	class USceneComponent* MuzzlePosition;
@@ -75,7 +66,7 @@ private:
 public:
 	//Reload Action
 	void ReloadMagazine();
-	
+
 	//Fire Action
 	void StartFire();
 	void StopFire();
@@ -88,9 +79,9 @@ private:
 	//Fire
 	void Fire();
 	void TrackTrajectory();
-	
+
 	//Init Delegate Lambda
-	void InitDelegates();
+	void SetUpDelegates();
 private:
 	//for weapon firing
 	bool bShouldFire;  //When Player Triggering is True
@@ -101,4 +92,11 @@ private:
 
 	//for weapon spawn and character animation
 	bool isSingleHanded;
+
+	//Weapon Properties
+	EWeaponState WeaponState;
+public:
+	void SetUpWeaponState(EWeaponState State);
+private:
+	void SetUpWeaponProperties(EWeaponState State);
 };

@@ -23,21 +23,23 @@ AWeapon::AWeapon()
 	PrimaryActorTick.bCanEverTick = true;
 
 	WeaponMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponMesh"));
-	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
-	MuzzlePosition = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzlePosition"));
-
 	SetRootComponent(WeaponMesh);
-	MuzzlePosition->SetupAttachment(RootComponent);
-	CollisionBox->SetupAttachment(RootComponent);
 
+	MuzzlePosition = CreateDefaultSubobject<USceneComponent>(TEXT("MuzzlePosition"));
+	MuzzlePosition->SetupAttachment(RootComponent);
+
+	//For detect if Character should LineTrace the gun to pickup
+	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
+	CollisionBox->SetupAttachment(RootComponent);
 	CollisionBox->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+
 }
 
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	InitDelegates();
+	SetUpDelegates();
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -62,7 +64,58 @@ void AWeapon::ReloadMagazine()
 
 }
 
+void AWeapon::SetUpWeaponState(EWeaponState State)
+{
+	switch (State)
+	{
+	case EWeaponState::EWS_OnGround:
+		SetUpWeaponProperties(EWeaponState::EWS_Picking);
+		break;
+	case EWeaponState::EWS_Equipped:
+		SetUpWeaponProperties(EWeaponState::EWS_Equipped);
+		break;
+	case EWeaponState::EWS_InBackpack:
+		SetUpWeaponProperties(EWeaponState::EWS_InBackpack);
+		break;
+	default:
+		SetUpWeaponProperties(EWeaponState::EWS_OnGround);
+		break;
+	}
+	WeaponState = State;
+}
+
+
 // Implementation
+
+//Weapon Fire
+void AWeapon::Fire()
+{
+	if (bCanFire)
+	{
+		TrackTrajectory();
+		bCanFire = false;
+
+		//Using Lambda Delegate
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			FireTimerHandle,
+			ResetFireTimerDelegate,
+			FireRate,
+			false
+		);
+
+	}
+}
+
+void AWeapon::SetUpDelegates()
+{
+	//Reset Fire
+	ResetFireTimerDelegate.BindLambda([this]() {
+		bCanFire = true;
+		});
+
+}
+
 void AWeapon::TrackTrajectory()
 {
 	FVector CrossHairWorldPosition;
@@ -104,32 +157,7 @@ void AWeapon::TrackTrajectory()
 	}
 
 }
-void AWeapon::Fire()
-{
-	if (bCanFire)
-	{
-		TrackTrajectory();
-		bCanFire = false;
 
-		//Using Lambda Delegate
-		GetWorld()->GetTimerManager().SetTimer
-		(
-			FireTimerHandle,
-			ResetFireTimerDelegate,
-			FireRate,
-			false
-		);
-
-	}
-}
-void AWeapon::InitDelegates()
-{
-	//Reset Fire
-	ResetFireTimerDelegate.BindLambda([this]() {
-		bCanFire = true;
-		});
-
-}
 void AWeapon::PlayFireSound()
 {
 	if (FireSound)
@@ -158,3 +186,52 @@ void AWeapon::PlayImpactVFX(FHitResult& HitResult)
 {
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFlash, HitResult.Location);
 }
+
+
+void AWeapon::SetUpWeaponProperties(EWeaponState State)
+{
+	switch (State)
+	{
+	case EWeaponState::EWS_OnGround:
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetSimulatePhysics(true);
+		WeaponMesh->SetEnableGravity(true);
+		WeaponMesh->SetVisibility(true);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		CollisionBox->SetSimulatePhysics(true);
+		CollisionBox->SetEnableGravity(true);
+		CollisionBox->SetVisibility(true);
+		break;
+	case EWeaponState::EWS_Picking:
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		WeaponMesh->SetSimulatePhysics(false);
+		WeaponMesh->SetEnableGravity(false);
+		WeaponMesh->SetVisibility(true);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CollisionBox->SetSimulatePhysics(false);
+		CollisionBox->SetEnableGravity(false);
+		CollisionBox->SetVisibility(true);
+		break;
+	case EWeaponState::EWS_Equipped:
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		WeaponMesh->SetSimulatePhysics(false);
+		WeaponMesh->SetEnableGravity(false);
+		WeaponMesh->SetVisibility(true);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CollisionBox->SetSimulatePhysics(false);
+		CollisionBox->SetEnableGravity(false);
+		CollisionBox->SetVisibility(true);
+		break;
+	case EWeaponState::EWS_InBackpack:
+		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		WeaponMesh->SetSimulatePhysics(false);
+		WeaponMesh->SetEnableGravity(false);
+		WeaponMesh->SetVisibility(false);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CollisionBox->SetSimulatePhysics(false);
+		CollisionBox->SetEnableGravity(false);
+		CollisionBox->SetVisibility(false);
+		break;
+	}
+}
+

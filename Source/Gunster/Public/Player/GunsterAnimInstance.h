@@ -25,9 +25,6 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
 	float JogYawOffset;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
-	FRotator AimRotation;
-
 public:
 	void JogAnimUpdate();
 	void AimOffsetAnimUpdate();

@@ -8,6 +8,8 @@
 #include "GameFramework/HUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/PlayerCameraManager.h"
+
+#include "Player/GunsterCharacter.h"
 #include "GameFramework/Character.h"
 
 AGunsterPlayerController::AGunsterPlayerController()
@@ -24,7 +26,7 @@ void AGunsterPlayerController::BeginPlay()
 void AGunsterPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	LimitCameraView();
+	
 	//DrawHUD
 }
 
@@ -62,10 +64,16 @@ void AGunsterPlayerController::LimitCameraView()
 	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
 	float CharacterOrientation = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetActorForwardVector().Rotation().Yaw;
 
-	Manager->ViewPitchMax = 60.0f;
-	Manager->ViewPitchMin = -60.0f;
+	Manager->ViewPitchMax = 70.0f;
+	Manager->ViewPitchMin = -70.0f;
 	Manager->ViewYawMax = CharacterOrientation + 95.0f;
 	Manager->ViewYawMin = CharacterOrientation - 95.0f;
+}
+
+void AGunsterPlayerController::ZoomCamera(float FOV)
+{
+	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+	Manager->SetFOV(FOV);
 }
 
 

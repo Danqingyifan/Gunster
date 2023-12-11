@@ -57,6 +57,7 @@ void UGunsterAnimInstance::AimOffsetAnimUpdate()
 	{	
 		if (AController* Controller = OwningCharacter->GetController())
 		{	
+			FRotator AimRotation;
 			FRotator ControlRotator = Controller->GetControlRotation();
 			FRotator ToOrientationRotator = OwningCharacter->GetActorForwardVector().ToOrientationRotator();
 			AimRotation = UKismetMathLibrary::NormalizedDeltaRotator(ControlRotator, ToOrientationRotator);
