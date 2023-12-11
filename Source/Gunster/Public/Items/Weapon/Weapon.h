@@ -95,6 +95,9 @@ private:
 
 	//Weapon Properties
 	EWeaponState WeaponState;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta=(AllowPrivateAccess = "true"))
+	int MaxAmmo;
+	int LeftAmmo;
 public:
 	void SetUpWeaponState(EWeaponState State);
 private:

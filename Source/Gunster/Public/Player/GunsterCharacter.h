@@ -12,7 +12,6 @@ UENUM(BlueprintType)
 enum class EFireState : uint8
 {
 	EFS_Idle UMETA(DisplayName = "Idle"),
-	EFS_Aiming UMETA(DisplayName = "Aiming"),
 	EFS_Firing UMETA(DisplayName = "Firing"),
 	EFS_Reloading UMETA(DisplayName = "Reloading"),
 	EFS_Equipping UMETA(DisplayName = "Equipping"),
@@ -28,7 +27,7 @@ public:
 
 protected:
 	virtual void BeginPlay();
-
+	virtual void Tick(float DeltaTime);
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 public:
 	// Getter Segment
@@ -45,14 +44,16 @@ private:
 	class AWeapon* RightHoldingWeapon;
 	
 	EFireState FireState;
-
+	bool bIsAiming;
 private:
 	//Camera Segment
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-
+	
+	float IdleFOV;
+	float AimFOV;
 
 //Function Area
 
@@ -73,6 +74,10 @@ protected:
 	void PullTrigger();
 	void ReleaseTrigger();
 	void Reload();
+
+	//Camara Segment
+	void ZoomCamera(float TargetFOV, float DeltaTime);
+
 //Init Part
 private: 
 	//Constructor
@@ -91,5 +96,8 @@ private:
 	class AWeapon* SpawnWeapon(const class USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass);
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
 
+public:
+	FORCEINLINE EFireState GetFireState() const { return FireState; }
+	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 };
 

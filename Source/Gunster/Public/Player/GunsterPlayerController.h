@@ -44,7 +44,6 @@ public:
 	
 	//Camera
 	void LimitCameraView();
-	void ZoomCamera(float FOV);
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class AHUD* StrafeHUD;

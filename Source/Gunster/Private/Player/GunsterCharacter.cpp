@@ -19,10 +19,11 @@
 #include "Engine/SkeletalMeshSocket.h"
 
 AGunsterCharacter::AGunsterCharacter()
-	:FireState(EFireState::EFS_Idle)
+	:FireState(EFireState::EFS_Idle),
+	IdleFOV(100.f), AimFOV(50.f)
 {
-	SetUpControllerRotation();
 	SetUpCamera();
+	SetUpControllerRotation();
 	SetUpCharacterMovement();
 }
 
@@ -38,6 +39,20 @@ void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerI
 	SetUpInput(PlayerInputComponent);
 }
 
+void AGunsterCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	// Zoom Camera if Aim 
+	if (bIsAiming)
+	{
+		ZoomCamera(AimFOV, DeltaTime);
+	}
+	else
+	{
+		ZoomCamera(IdleFOV, DeltaTime);
+	}
+}
+
 
 //Init Section
 //Constructor
@@ -50,7 +65,8 @@ void AGunsterCharacter::SetUpControllerRotation()
 }
 
 void AGunsterCharacter::SetUpCamera()
-{
+{	
+
 	// Create a camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -61,7 +77,9 @@ void AGunsterCharacter::SetUpCamera()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-
+	
+	//Set Default FOV
+	FollowCamera->FieldOfView = IdleFOV;
 }
 
 void AGunsterCharacter::SetUpCharacterMovement()
@@ -85,7 +103,7 @@ void AGunsterCharacter::SpawnDefaultWeapon()
 	const USkeletalMeshSocket* LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
 	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
 	if (DefaultWeaponClass && (LeftHandSocket || RightHandSocket))
-	{	
+	{
 		LeftHoldingWeapon = SpawnWeapon(LeftHandSocket, DefaultWeaponClass);
 		RightHoldingWeapon = SpawnWeapon(RightHandSocket, DefaultWeaponClass);
 
@@ -179,7 +197,7 @@ void AGunsterCharacter::ReleaseTrigger()
 		LeftHoldingWeapon->StopFire();
 	}
 	if (RightHoldingWeapon)
-	{	
+	{
 		RightHoldingWeapon->StopFire();
 	}
 }
@@ -194,20 +212,19 @@ void AGunsterCharacter::Reload()
 
 void AGunsterCharacter::Aim()
 {
-	AGunsterPlayerController* GunsterPlayerController = Cast<AGunsterPlayerController>(GetController());
-	if (GunsterPlayerController)
-	{
-		GunsterPlayerController->ZoomCamera(30.f);
-	}
+	bIsAiming = true;
 }
 
 void AGunsterCharacter::StopAim()
 {
-	AGunsterPlayerController* GunsterPlayerController = Cast<AGunsterPlayerController>(GetController());
-	if (GunsterPlayerController)
-	{
-		GunsterPlayerController->ZoomCamera(60.f);
-	}
+	bIsAiming = false;
+}
+
+void AGunsterCharacter::ZoomCamera(float TargetFOV, float DeltaTime)
+{
+	float CurrentFOV = GetFollowCamera()->FieldOfView;
+	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 20.0f);
+	GetFollowCamera()->SetFieldOfView(NewFOV);
 }
 
 void AGunsterCharacter::Dodge()
@@ -226,8 +243,8 @@ void AGunsterCharacter::Dash()
 }
 
 //Implementation
-class AWeapon* AGunsterCharacter::SpawnWeapon(const USkeletalMeshSocket* Socket , const TSubclassOf<class AWeapon> WeaponClass)
-{	
+class AWeapon* AGunsterCharacter::SpawnWeapon(const USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass)
+{
 	if (Socket)
 	{
 		FActorSpawnParameters SpawnInfo;

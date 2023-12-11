@@ -70,10 +70,3 @@ void AGunsterPlayerController::LimitCameraView()
 	Manager->ViewYawMin = CharacterOrientation - 95.0f;
 }
 
-void AGunsterPlayerController::ZoomCamera(float FOV)
-{
-	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
-	Manager->SetFOV(FOV);
-}
-
-

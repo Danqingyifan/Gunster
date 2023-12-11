@@ -40,6 +40,7 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	SetUpDelegates();
+	LeftAmmo = MaxAmmo; 
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -61,7 +62,7 @@ void AWeapon::StopFire()
 
 void AWeapon::ReloadMagazine()
 {
-
+	LeftAmmo = MaxAmmo;
 }
 
 void AWeapon::SetUpWeaponState(EWeaponState State)
@@ -92,18 +93,24 @@ void AWeapon::Fire()
 {
 	if (bCanFire)
 	{
-		TrackTrajectory();
-		bCanFire = false;
-
-		//Using Lambda Delegate
-		GetWorld()->GetTimerManager().SetTimer
-		(
-			FireTimerHandle,
-			ResetFireTimerDelegate,
-			FireRate,
-			false
-		);
-
+		if (LeftAmmo > 0)
+		{
+			TrackTrajectory();
+			LeftAmmo--;
+			bCanFire = false;
+			//Using Lambda Delegate
+			GetWorld()->GetTimerManager().SetTimer
+			(
+				FireTimerHandle,
+				ResetFireTimerDelegate,
+				FireRate,
+				false
+			);
+		}
+		else
+		{
+			ReloadMagazine();
+		}
 	}
 }
 
