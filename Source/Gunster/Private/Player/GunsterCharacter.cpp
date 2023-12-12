@@ -44,7 +44,7 @@ void AGunsterCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	// Zoom Camera if Aim 
 	if (bIsAiming)
-	{
+	{	
 		ZoomCamera(AimFOV, DeltaTime);
 	}
 	else
@@ -213,11 +213,30 @@ void AGunsterCharacter::Reload()
 void AGunsterCharacter::Aim()
 {
 	bIsAiming = true;
+	AimLocomotion(bIsAiming);
 }
 
 void AGunsterCharacter::StopAim()
 {
 	bIsAiming = false;
+	AimLocomotion(bIsAiming);
+}
+
+void AGunsterCharacter::AimLocomotion(bool isAiming)
+{	
+	if (isAiming)
+	{
+		bUseControllerRotationYaw = true;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->MaxWalkSpeed = 250.f;
+	}
+	else
+	{
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	}
+
 }
 
 void AGunsterCharacter::ZoomCamera(float TargetFOV, float DeltaTime)
@@ -226,6 +245,8 @@ void AGunsterCharacter::ZoomCamera(float TargetFOV, float DeltaTime)
 	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 20.0f);
 	GetFollowCamera()->SetFieldOfView(NewFOV);
 }
+
+
 
 void AGunsterCharacter::Dodge()
 {

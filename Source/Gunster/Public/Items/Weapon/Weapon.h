@@ -57,6 +57,8 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* ImpactFlash;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class USoundCue* ReloadSound;
 	//HUD
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* CrossHair;
@@ -75,31 +77,34 @@ private:
 	void PlayFireSound();
 	void PlayFireVFX(FVector& EndPoint);
 	void PlayImpactVFX(FHitResult& HitResult);
+	void PlayReloadSound();
 
 	//Fire
 	void Fire();
 	void TrackTrajectory();
 
-	//Init Delegate Lambda
-	void SetUpDelegates();
 private:
 	//for weapon firing
 	bool bShouldFire;  //When Player Triggering is True
 	bool bCanFire;	//When Gun is Ready to Fire is True
 	float FireRate;
-	FTimerHandle FireTimerHandle;
-	FTimerDelegate ResetFireTimerDelegate;
+	float ReloadTime;
+
+	FTimerHandle TimerHandle;
 
 	//for weapon spawn and character animation
 	bool isSingleHanded;
 
 	//Weapon Properties
 	EWeaponState WeaponState;
-	UPROPERTY(EditAnywhere,BlueprintReadOnly,meta=(AllowPrivateAccess = "true"))
-	int MaxAmmo;
-	int LeftAmmo;
+	TMap<EWeaponType, uint8> StartingAmmoMap;
+	uint8 StartingAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ammo", meta = (AllowPrivateAccess = "true"))
+	uint8 MagazineCapacity;
+	uint8 LeftAmmo;
 public:
 	void SetUpWeaponState(EWeaponState State);
+	uint8 GetLeftAmmo() { return LeftAmmo; }
 private:
 	void SetUpWeaponProperties(EWeaponState State);
 };

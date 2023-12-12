@@ -64,6 +64,7 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	//Action Segment
+	void AimLocomotion(bool isAiming);
 	void Dodge();
 	void Sprint();
 	void Dash();
@@ -77,7 +78,7 @@ protected:
 
 	//Camara Segment
 	void ZoomCamera(float TargetFOV, float DeltaTime);
-
+	
 //Init Part
 private: 
 	//Constructor
@@ -89,8 +90,7 @@ private:
 	void SpawnDefaultWeapon();
 
 	//Input
-	void SetUpInput(class UInputComponent* PlayerInputComponent);
-	
+	void SetUpInput(class UInputComponent* PlayerInputComponent);	
 //Implementation Part
 private:
 	class AWeapon* SpawnWeapon(const class USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass);

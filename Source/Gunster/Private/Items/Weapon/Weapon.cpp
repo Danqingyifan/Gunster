@@ -18,7 +18,7 @@
 #include "TimerManager.h"
 
 AWeapon::AWeapon()
-	:bShouldFire(false), bCanFire(true), FireRate(0.1f) // Fire Params Init
+	:bShouldFire(false), bCanFire(true), FireRate(0.1f), ReloadTime(1.5f) // Fire Params Init
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -39,8 +39,7 @@ AWeapon::AWeapon()
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	SetUpDelegates();
-	LeftAmmo = MaxAmmo; 
+	LeftAmmo = MagazineCapacity;
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -62,7 +61,8 @@ void AWeapon::StopFire()
 
 void AWeapon::ReloadMagazine()
 {
-	LeftAmmo = MaxAmmo;
+	LeftAmmo = MagazineCapacity;
+	PlayReloadSound();
 }
 
 void AWeapon::SetUpWeaponState(EWeaponState State)
@@ -93,35 +93,40 @@ void AWeapon::Fire()
 {
 	if (bCanFire)
 	{
+		bCanFire = false;
 		if (LeftAmmo > 0)
 		{
 			TrackTrajectory();
 			LeftAmmo--;
-			bCanFire = false;
 			//Using Lambda Delegate
 			GetWorld()->GetTimerManager().SetTimer
 			(
-				FireTimerHandle,
-				ResetFireTimerDelegate,
+				TimerHandle,
+				([this]() {
+					bCanFire = true;
+					}),
 				FireRate,
 				false
 			);
+			UE_LOG(LogTemp, Warning, TEXT("AMMO: %d"), LeftAmmo);
 		}
 		else
 		{
-			ReloadMagazine();
+			GetWorld()->GetTimerManager().SetTimer
+			(
+				TimerHandle,
+				([this]() {
+					ReloadMagazine();
+					bCanFire = true;
+					}),
+				ReloadTime,
+				false
+			);
 		}
 	}
 }
 
-void AWeapon::SetUpDelegates()
-{
-	//Reset Fire
-	ResetFireTimerDelegate.BindLambda([this]() {
-		bCanFire = true;
-		});
 
-}
 
 void AWeapon::TrackTrajectory()
 {
@@ -194,6 +199,14 @@ void AWeapon::PlayImpactVFX(FHitResult& HitResult)
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFlash, HitResult.Location);
 }
 
+
+void AWeapon::PlayReloadSound()
+{
+	if (ReloadSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ReloadSound);
+	}
+}
 
 void AWeapon::SetUpWeaponProperties(EWeaponState State)
 {
