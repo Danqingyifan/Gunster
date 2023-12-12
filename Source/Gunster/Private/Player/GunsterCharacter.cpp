@@ -19,8 +19,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 
 AGunsterCharacter::AGunsterCharacter()
-	:FireState(ECombatState::EFS_Unoccupied),
-	IdleFOV(100.f), AimFOV(50.f)
+	:bIsAiming(false), IdleFOV(100.f), AimFOV(50.f)
 {
 	SetUpCamera();
 	SetUpControllerRotation();
@@ -43,14 +42,7 @@ void AGunsterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	// Zoom Camera if Aim 
-	if (bIsAiming)
-	{	
-		ZoomCamera(AimFOV, DeltaTime);
-	}
-	else
-	{
-		ZoomCamera(IdleFOV, DeltaTime);
-	}
+	ZoomIfAim(bIsAiming, DeltaTime);
 }
 
 
@@ -65,7 +57,7 @@ void AGunsterCharacter::SetUpControllerRotation()
 }
 
 void AGunsterCharacter::SetUpCamera()
-{	
+{
 
 	// Create a camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -77,7 +69,7 @@ void AGunsterCharacter::SetUpCamera()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
-	
+
 	//Set Default FOV
 	FollowCamera->FieldOfView = IdleFOV;
 }
@@ -208,6 +200,10 @@ void AGunsterCharacter::Reload()
 	{
 		LeftHoldingWeapon->ReloadMagazine();
 	}
+	if (RightHoldingWeapon)
+	{
+		RightHoldingWeapon->ReloadMagazine();
+	}
 }
 
 void AGunsterCharacter::Aim()
@@ -222,18 +218,30 @@ void AGunsterCharacter::StopAim()
 	AimLocomotion(bIsAiming);
 }
 
+void AGunsterCharacter::ZoomIfAim(bool isAiming, float DeltaTime)
+{
+	if (bIsAiming)
+	{
+		ZoomCamera(AimFOV, DeltaTime);
+	}
+	else
+	{
+		ZoomCamera(IdleFOV, DeltaTime);
+	}
+}
+
 void AGunsterCharacter::AimLocomotion(bool isAiming)
-{	
+{
 	if (isAiming)
 	{
 		bUseControllerRotationYaw = true;
-		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
 		GetCharacterMovement()->MaxWalkSpeed = 250.f;
 	}
 	else
 	{
 		bUseControllerRotationYaw = false;
-		GetCharacterMovement()->bOrientRotationToMovement = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
 		GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	}
 
@@ -242,8 +250,11 @@ void AGunsterCharacter::AimLocomotion(bool isAiming)
 void AGunsterCharacter::ZoomCamera(float TargetFOV, float DeltaTime)
 {
 	float CurrentFOV = GetFollowCamera()->FieldOfView;
-	float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 20.0f);
-	GetFollowCamera()->SetFieldOfView(NewFOV);
+	if (CurrentFOV != TargetFOV)
+	{
+		float NewFOV = FMath::FInterpTo(CurrentFOV, TargetFOV, DeltaTime, 20.0f);
+		GetFollowCamera()->SetFieldOfView(NewFOV);
+	}
 }
 
 

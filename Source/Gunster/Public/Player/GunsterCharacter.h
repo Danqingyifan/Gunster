@@ -8,14 +8,6 @@
 #include "GunsterCharacter.generated.h"
 
 // Character play FiringAction animation According to this state enum
-UENUM(BlueprintType)
-enum class ECombatState : uint8
-{
-	EFS_Unoccupied UMETA(DisplayName = "Unoccupied"),
-	EFS_Firing UMETA(DisplayName = "Firing"),
-	EFS_Reloading UMETA(DisplayName = "Reloading"),
-};
-
 UCLASS(config = Game)
 class AGunsterCharacter : public ACharacter
 {
@@ -42,7 +34,6 @@ private:
 	class AWeapon* LeftHoldingWeapon;
 	class AWeapon* RightHoldingWeapon;
 	
-	ECombatState FireState;
 	bool bIsAiming;
 private:
 	//Camera Segment
@@ -76,6 +67,7 @@ protected:
 	void Reload();
 
 	//Camara Segment
+	void ZoomIfAim(bool isAiming, float DeltaTime);
 	void ZoomCamera(float TargetFOV, float DeltaTime);
 	
 //Init Part
@@ -96,7 +88,6 @@ private:
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
 
 public:
-	FORCEINLINE ECombatState GetFireState() const { return FireState; }
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 };
 

@@ -97,7 +97,6 @@ private:
 	float FireRate;
 	float ReloadTime;
 	EFireState FireState;
-
 	FTimerHandle TimerHandle;
 
 	//for weapon spawn and character animation
@@ -105,11 +104,16 @@ private:
 
 	//Weapon Properties
 	EWeaponState WeaponState;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
+	EWeaponType WeaponType;
+
+	//Ammo
 	TMap<EWeaponType, uint8> StartingAmmoMap;
 	uint8 StartingAmmo;
+	uint8 LeftAmmo;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ammo", meta = (AllowPrivateAccess = "true"))
 	uint8 MagazineCapacity;
-	uint8 LeftAmmo;
+
 public:
 	void SetUpWeaponState(EWeaponState State);
 	uint8 GetLeftAmmo() { return LeftAmmo; }

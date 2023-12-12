@@ -60,9 +60,19 @@ void AWeapon::StopFire()
 }
 
 void AWeapon::ReloadMagazine()
-{
-	LeftAmmo = MagazineCapacity;
+{	
+	bCanFire = false;
 	PlayReloadSound();
+	GetWorld()->GetTimerManager().SetTimer
+	(
+		TimerHandle,
+		([this]() {
+			bCanFire = true;
+			}),
+		ReloadTime,
+		false
+	);
+	LeftAmmo = MagazineCapacity;
 }
 
 void AWeapon::SetUpWeaponState(EWeaponState State)
@@ -93,9 +103,9 @@ void AWeapon::Fire()
 {
 	if (bCanFire)
 	{
-		bCanFire = false;
 		if (LeftAmmo > 0)
-		{
+		{	
+			bCanFire = false;
 			TrackTrajectory();
 			LeftAmmo--;
 			//Using Lambda Delegate
@@ -111,17 +121,8 @@ void AWeapon::Fire()
 			UE_LOG(LogTemp, Warning, TEXT("AMMO: %d"), LeftAmmo);
 		}
 		else
-		{
-			GetWorld()->GetTimerManager().SetTimer
-			(
-				TimerHandle,
-				([this]() {
-					ReloadMagazine();
-					bCanFire = true;
-					}),
-				ReloadTime,
-				false
-			);
+		{	
+			ReloadMagazine();
 		}
 	}
 }
