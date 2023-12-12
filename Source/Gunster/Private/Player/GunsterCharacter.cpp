@@ -19,7 +19,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 
 AGunsterCharacter::AGunsterCharacter()
-	:FireState(EFireState::EFS_Idle),
+	:FireState(ECombatState::EFS_Unoccupied),
 	IdleFOV(100.f), AimFOV(50.f)
 {
 	SetUpCamera();

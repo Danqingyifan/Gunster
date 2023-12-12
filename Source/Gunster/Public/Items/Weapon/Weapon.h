@@ -24,6 +24,13 @@ enum class EWeaponState : uint8
 	EWS_Equipped UMETA(DisplayName = "Equipped")
 };
 
+UENUM(BlueprintType)
+enum class EFireState : uint8
+{
+	ECS_Idle UMETA(DisplayName = "Idle"),
+	ECS_Firing UMETA(DisplayName = "Firing"),
+	ECS_Reloading UMETA(DisplayName = "Reloading")
+};
 
 UCLASS()
 class GUNSTER_API AWeapon : public AActor
@@ -89,6 +96,7 @@ private:
 	bool bCanFire;	//When Gun is Ready to Fire is True
 	float FireRate;
 	float ReloadTime;
+	EFireState FireState;
 
 	FTimerHandle TimerHandle;
 

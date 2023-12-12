@@ -9,12 +9,11 @@
 
 // Character play FiringAction animation According to this state enum
 UENUM(BlueprintType)
-enum class EFireState : uint8
+enum class ECombatState : uint8
 {
-	EFS_Idle UMETA(DisplayName = "Idle"),
+	EFS_Unoccupied UMETA(DisplayName = "Unoccupied"),
 	EFS_Firing UMETA(DisplayName = "Firing"),
 	EFS_Reloading UMETA(DisplayName = "Reloading"),
-	EFS_Equipping UMETA(DisplayName = "Equipping"),
 };
 
 UCLASS(config = Game)
@@ -43,7 +42,7 @@ private:
 	class AWeapon* LeftHoldingWeapon;
 	class AWeapon* RightHoldingWeapon;
 	
-	EFireState FireState;
+	ECombatState FireState;
 	bool bIsAiming;
 private:
 	//Camera Segment
@@ -97,7 +96,7 @@ private:
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
 
 public:
-	FORCEINLINE EFireState GetFireState() const { return FireState; }
+	FORCEINLINE ECombatState GetFireState() const { return FireState; }
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 };
 

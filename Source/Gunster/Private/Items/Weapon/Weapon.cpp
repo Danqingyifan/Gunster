@@ -18,7 +18,7 @@
 #include "TimerManager.h"
 
 AWeapon::AWeapon()
-	:bShouldFire(false), bCanFire(true), FireRate(0.1f), ReloadTime(1.5f) // Fire Params Init
+	:bShouldFire(false), bCanFire(true), FireRate(0.1f), ReloadTime(1.5f),FireState(EFireState::ECS_Idle) // Fire Params Init
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -33,7 +33,7 @@ AWeapon::AWeapon()
 	CollisionBox->SetupAttachment(RootComponent);
 	CollisionBox->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-
+	
 }
 
 void AWeapon::BeginPlay()
@@ -167,7 +167,6 @@ void AWeapon::TrackTrajectory()
 		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 15.f, 24, FColor::Green, false, 3.0f);
 		PlayImpactVFX(FireHit);
 	}
-
 }
 
 void AWeapon::PlayFireSound()
@@ -217,6 +216,7 @@ void AWeapon::SetUpWeaponProperties(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetVisibility(true);
+
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		CollisionBox->SetSimulatePhysics(true);
 		CollisionBox->SetEnableGravity(true);
@@ -227,6 +227,7 @@ void AWeapon::SetUpWeaponProperties(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetVisibility(true);
+
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionBox->SetSimulatePhysics(false);
 		CollisionBox->SetEnableGravity(false);
@@ -237,6 +238,7 @@ void AWeapon::SetUpWeaponProperties(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetVisibility(true);
+
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionBox->SetSimulatePhysics(false);
 		CollisionBox->SetEnableGravity(false);
@@ -247,6 +249,7 @@ void AWeapon::SetUpWeaponProperties(EWeaponState State)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetVisibility(false);
+
 		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		CollisionBox->SetSimulatePhysics(false);
 		CollisionBox->SetEnableGravity(false);
