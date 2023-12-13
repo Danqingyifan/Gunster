@@ -88,6 +88,7 @@ private:
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
 
 public:
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 };
 

@@ -27,7 +27,7 @@ enum class EWeaponState : uint8
 UENUM(BlueprintType)
 enum class EFireState : uint8
 {
-	ECS_Idle UMETA(DisplayName = "Idle"),
+	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
 	ECS_Firing UMETA(DisplayName = "Firing"),
 	ECS_Reloading UMETA(DisplayName = "Reloading")
 };
@@ -112,10 +112,11 @@ private:
 	uint8 StartingAmmo;
 	uint8 LeftAmmo;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ammo", meta = (AllowPrivateAccess = "true"))
-	uint8 MagazineCapacity;
+	uint8 ClipCapacity;
 
 public:
 	void SetUpWeaponState(EWeaponState State);
+	void SetUpFireState(EFireState State);
 	uint8 GetLeftAmmo() { return LeftAmmo; }
 private:
 	void SetUpWeaponProperties(EWeaponState State);

@@ -18,7 +18,7 @@
 #include "TimerManager.h"
 
 AWeapon::AWeapon()
-	:bShouldFire(false), bCanFire(true), FireRate(0.1f), ReloadTime(1.5f),FireState(EFireState::ECS_Idle) // Fire Params Init
+	:bShouldFire(false), bCanFire(true), FireRate(0.1f), ReloadTime(1.5f), FireState(EFireState::ECS_Unoccupied) // Fire Params Init
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -33,13 +33,13 @@ AWeapon::AWeapon()
 	CollisionBox->SetupAttachment(RootComponent);
 	CollisionBox->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	
+
 }
 
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	LeftAmmo = MagazineCapacity;
+	LeftAmmo = ClipCapacity;
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -60,7 +60,7 @@ void AWeapon::StopFire()
 }
 
 void AWeapon::ReloadMagazine()
-{	
+{
 	bCanFire = false;
 	PlayReloadSound();
 	GetWorld()->GetTimerManager().SetTimer
@@ -72,7 +72,7 @@ void AWeapon::ReloadMagazine()
 		ReloadTime,
 		false
 	);
-	LeftAmmo = MagazineCapacity;
+	LeftAmmo = ClipCapacity;
 }
 
 void AWeapon::SetUpWeaponState(EWeaponState State)
@@ -95,7 +95,6 @@ void AWeapon::SetUpWeaponState(EWeaponState State)
 	WeaponState = State;
 }
 
-
 // Implementation
 
 //Weapon Fire
@@ -104,7 +103,8 @@ void AWeapon::Fire()
 	if (bCanFire)
 	{
 		if (LeftAmmo > 0)
-		{	
+		{
+			FireState = EFireState::ECS_Firing;
 			bCanFire = false;
 			TrackTrajectory();
 			LeftAmmo--;
@@ -121,7 +121,8 @@ void AWeapon::Fire()
 			UE_LOG(LogTemp, Warning, TEXT("AMMO: %d"), LeftAmmo);
 		}
 		else
-		{	
+		{
+			FireState = EFireState::ECS_Reloading;
 			ReloadMagazine();
 		}
 	}
