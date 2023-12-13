@@ -14,7 +14,7 @@ void UGunsterAnimInstance::NativeInitializeAnimation()
 }
 
 void UGunsterAnimInstance::NativeUpdateAnimation(float DeltaTime)
-{	
+{
 	AimOffsetAnimUpdate();
 	JogAnimUpdate();
 }
@@ -26,7 +26,7 @@ void UGunsterAnimInstance::JogAnimUpdate()
 		OwningCharacter = Cast<AGunsterCharacter>(TryGetPawnOwner());
 	}
 	if (OwningCharacter)
-	{	
+	{
 		//JogSpeed Setup
 		FVector Velocity = OwningCharacter->GetVelocity();
 		Velocity.Z = 0;
@@ -54,9 +54,9 @@ void UGunsterAnimInstance::AimOffsetAnimUpdate()
 		OwningCharacter = Cast<AGunsterCharacter>(TryGetPawnOwner());
 	}
 	if (OwningCharacter)
-	{	
+	{
 		if (AController* Controller = OwningCharacter->GetController())
-		{	
+		{
 			FRotator AimRotation;
 			FRotator ControlRotator = Controller->GetControlRotation();
 			FRotator ToOrientationRotator = OwningCharacter->GetActorForwardVector().ToOrientationRotator();
@@ -64,4 +64,19 @@ void UGunsterAnimInstance::AimOffsetAnimUpdate()
 		}
 	}
 }
+
+bool UGunsterAnimInstance::GetIsAiming()
+{
+	if (OwningCharacter == nullptr)
+	{
+		OwningCharacter = Cast<AGunsterCharacter>(TryGetPawnOwner());
+	}
+	if (OwningCharacter)
+	{
+		return OwningCharacter->GetIsAiming();
+	}
+	return	false;
+}
+
+
 

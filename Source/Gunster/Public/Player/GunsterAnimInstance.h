@@ -28,4 +28,6 @@ private:
 public:
 	void JogAnimUpdate();
 	void AimOffsetAnimUpdate();
+	UFUNCTION(BlueprintCallable, Category = "State")
+	bool GetIsAiming();
 };
