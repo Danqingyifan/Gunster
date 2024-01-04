@@ -25,7 +25,6 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-//Data Area
 private:
 	//Weapon Segment
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
@@ -33,21 +32,25 @@ private:
 
 	class AWeapon* LeftHoldingWeapon;
 	class AWeapon* RightHoldingWeapon;
-	
+
 	bool bIsAiming;
+	//Montage Segment
+	class UAnimInstance* AnimInstance;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* StrafeMontage;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* ReloadMontage;
+
 private:
 	//Camera Segment
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-	
+
 	float IdleFOV;
 	float AimFOV;
 
-//Function Area
-
-//API Part
 protected:
 	// Basic Segment
 	void Move(const FInputActionValue& Value);
@@ -69,9 +72,9 @@ protected:
 	//Camara Segment
 	void ZoomIfAim(bool isAiming, float DeltaTime);
 	void ZoomCamera(float TargetFOV, float DeltaTime);
-	
-//Init Part
-private: 
+
+	//Init Part
+private:
 	//Constructor
 	void SetUpControllerRotation();
 	void SetUpCamera();
@@ -81,8 +84,7 @@ private:
 	void SpawnDefaultWeapon();
 
 	//Input
-	void SetUpInput(class UInputComponent* PlayerInputComponent);	
-//Implementation Part
+	void SetUpInput(class UInputComponent* PlayerInputComponent);
 private:
 	class AWeapon* SpawnWeapon(const class USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass);
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);

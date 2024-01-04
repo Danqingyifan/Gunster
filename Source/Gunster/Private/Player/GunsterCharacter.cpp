@@ -30,6 +30,7 @@ void AGunsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnDefaultWeapon();
+	AnimInstance = GetMesh()->GetAnimInstance();
 }
 
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -97,7 +98,7 @@ void AGunsterCharacter::SpawnDefaultWeapon()
 	if (DefaultWeaponClass && (LeftHandSocket || RightHandSocket))
 	{
 		LeftHoldingWeapon = SpawnWeapon(LeftHandSocket, DefaultWeaponClass);
-		RightHoldingWeapon = SpawnWeapon(RightHandSocket, DefaultWeaponClass);
+		//RightHoldingWeapon = SpawnWeapon(RightHandSocket, DefaultWeaponClass);
 
 		if (LeftHoldingWeapon)
 		{
@@ -172,9 +173,14 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 
 void AGunsterCharacter::PullTrigger()
 {
-	if (LeftHoldingWeapon)
+	if (LeftHoldingWeapon && bIsAiming)
 	{
 		LeftHoldingWeapon->StartFire();
+		if (AnimInstance && StrafeMontage)
+		{
+			AnimInstance->Montage_Play(StrafeMontage);
+			AnimInstance->Montage_JumpToSection(FName("Strafe"));
+		}
 	}
 	if (RightHoldingWeapon)
 	{
@@ -199,6 +205,11 @@ void AGunsterCharacter::Reload()
 	if (LeftHoldingWeapon)
 	{
 		LeftHoldingWeapon->ReloadMagazine();
+		if (AnimInstance && ReloadMontage)
+		{
+			AnimInstance->Montage_Play(ReloadMontage);
+			AnimInstance->Montage_JumpToSection(FName("Reload"));
+		}
 	}
 	if (RightHoldingWeapon)
 	{

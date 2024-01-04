@@ -19,15 +19,23 @@ private:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "State",meta = (AllowPrivateAccess = "true"))
 	bool IsAccelerating;
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	bool IsAiming;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "State", meta = (AllowPrivateAccess = "true"))
+	bool IsShooting;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
 	float JogSpeed;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
 	float JogYawOffset;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StateValue", meta = (AllowPrivateAccess = "true"))
+	FRotator AimOffset;
+
+	void JogAnimUpdate();
+	void AimOffsetUpdate();
+	void checkIfAiming();
 
 public:
-	void JogAnimUpdate();
-	void AimOffsetAnimUpdate();
-	UFUNCTION(BlueprintCallable, Category = "State")
-	bool GetIsAiming();
+	UFUNCTION(BlueprintPure,Category = "State")
+	bool GetIsAiming() const { return IsAiming; }
 };

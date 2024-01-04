@@ -21,6 +21,7 @@ void AGunsterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	SetupInputComponent();
+	LimitCameraView();
 }
 
 void AGunsterPlayerController::Tick(float DeltaTime)
@@ -62,11 +63,8 @@ bool AGunsterPlayerController::DeprojectCrossHairToWorld(FVector& CrossHairWorld
 void AGunsterPlayerController::LimitCameraView()
 {
 	APlayerCameraManager* Manager = UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
-	float CharacterOrientation = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)->GetActorForwardVector().Rotation().Yaw;
 
 	Manager->ViewPitchMax = 70.0f;
 	Manager->ViewPitchMin = -70.0f;
-	Manager->ViewYawMax = CharacterOrientation + 95.0f;
-	Manager->ViewYawMin = CharacterOrientation - 95.0f;
 }
 

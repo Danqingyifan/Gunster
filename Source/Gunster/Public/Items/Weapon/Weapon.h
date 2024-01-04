@@ -72,6 +72,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* WeaponPickUp;
 
+	
 public:
 	//Reload Action
 	void ReloadMagazine();
@@ -118,6 +119,7 @@ public:
 	void SetUpWeaponState(EWeaponState State);
 	void SetUpFireState(EFireState State);
 	uint8 GetLeftAmmo() { return LeftAmmo; }
+	FORCEINLINE EWeaponState GetWeaponState() const { return WeaponState; }
 private:
 	void SetUpWeaponProperties(EWeaponState State);
 };

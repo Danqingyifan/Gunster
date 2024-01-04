@@ -15,8 +15,12 @@ void UGunsterAnimInstance::NativeInitializeAnimation()
 
 void UGunsterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 {
-	AimOffsetAnimUpdate();
 	JogAnimUpdate();
+	AimOffsetUpdate();
+	UE_LOG(LogTemp, Warning, TEXT("AimOffset:%s"), *AimOffset.ToString());
+	checkIfAiming();
+	UE_LOG(LogTemp, Warning, TEXT("AimOffset:%s"), *AimOffset.ToString());
+
 }
 
 void UGunsterAnimInstance::JogAnimUpdate()
@@ -47,7 +51,7 @@ void UGunsterAnimInstance::JogAnimUpdate()
 	}
 }
 
-void UGunsterAnimInstance::AimOffsetAnimUpdate()
+void UGunsterAnimInstance::AimOffsetUpdate()
 {
 	if (OwningCharacter == nullptr)
 	{
@@ -57,15 +61,15 @@ void UGunsterAnimInstance::AimOffsetAnimUpdate()
 	{
 		if (AController* Controller = OwningCharacter->GetController())
 		{
-			FRotator AimRotation;
 			FRotator ControlRotator = Controller->GetControlRotation();
 			FRotator ToOrientationRotator = OwningCharacter->GetActorForwardVector().ToOrientationRotator();
-			AimRotation = UKismetMathLibrary::NormalizedDeltaRotator(ControlRotator, ToOrientationRotator);
+			AimOffset = UKismetMathLibrary::NormalizedDeltaRotator(ControlRotator, ToOrientationRotator);
+
 		}
 	}
 }
 
-bool UGunsterAnimInstance::GetIsAiming()
+void UGunsterAnimInstance::checkIfAiming()
 {
 	if (OwningCharacter == nullptr)
 	{
@@ -73,9 +77,8 @@ bool UGunsterAnimInstance::GetIsAiming()
 	}
 	if (OwningCharacter)
 	{
-		return OwningCharacter->GetIsAiming();
+		IsAiming = OwningCharacter->GetIsAiming();
 	}
-	return	false;
 }
 
 
