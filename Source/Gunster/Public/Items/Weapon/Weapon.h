@@ -4,16 +4,65 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/DataTable.h"
 #include "Weapon.generated.h"
 
+//WeaponType
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
 	EWT_Pistol UMETA(DisplayName = "Pistol"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_SMG UMETA(DisplayName = "SMG"),
-	EWT_Rifle UMETA(DisplayName = "Rifle")
+	EWT_Rifle UMETA(DisplayName = "Rifle"),
+
+	EWT_MAX UMETA(DisplayName = "DefaultMax")
 };
+
+USTRUCT(BlueprintType)
+struct FWeaponDataTable :public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString WeaponName;
+	//Combat
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	uint8 ClipCapacity;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	uint8 StartingAmmo;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float FireRate;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ReloadTime;
+
+	//Properties
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UStaticMesh* WeaponMesh;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USceneComponent* MuzzlePosition;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UBoxComponent* CollisionBox;
+
+	//FX
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USoundCue* FireSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class USoundCue* ReloadSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UParticleSystem* MuzzleFlash;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UParticleSystem* SmokeTrail;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UParticleSystem* ImpactFlash;
+
+	//HUD
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UWidgetComponent* CrossHair;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	class UTexture2D* InventoryIcon;
+};
+
 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
@@ -42,7 +91,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
+	
 public:
 	virtual void Tick(float DeltaTime) override;
 
@@ -58,19 +107,23 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class USoundCue* FireSound;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class USoundCue* ReloadSound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class USoundCue* SwitchSound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class USoundCue* OutOfAmmoSound;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* MuzzleFlash;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* SmokeTrail;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UParticleSystem* ImpactFlash;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	class USoundCue* ReloadSound;
 	//HUD
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* CrossHair;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* WeaponPickUp;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	class UTexture2D* InventoryIcon;
 
 	
 public:
@@ -86,6 +139,7 @@ private:
 	void PlayFireVFX(FVector& EndPoint);
 	void PlayImpactVFX(FHitResult& HitResult);
 	void PlayReloadSound();
+	void PlayOutOfAmmoSound();
 
 	//Fire
 	void Fire();
@@ -100,26 +154,31 @@ private:
 	EFireState FireState;
 	FTimerHandle TimerHandle;
 
-	//for weapon spawn and character animation
-	bool isSingleHanded;
-
 	//Weapon Properties
 	EWeaponState WeaponState;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
 	EWeaponType WeaponType;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	FString WeaponName;
 
 	//Ammo
-	TMap<EWeaponType, uint8> StartingAmmoMap;
-	uint8 StartingAmmo;
+	uint8 StartingAmmo; //The total amount of ammo the player has at the beginning
 	uint8 LeftAmmo;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Ammo", meta = (AllowPrivateAccess = "true"))
 	uint8 ClipCapacity;
-
+	
+	//DataTable
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = DataTable, meta = (AllowPrivateAccess = "true"))
+	class UDataTable* WeaponDataTable;
 public:
 	void SetUpWeaponState(EWeaponState State);
-	void SetUpFireState(EFireState State);
 	uint8 GetLeftAmmo() { return LeftAmmo; }
+	void OnConstruction(const FTransform& Transform) override;
 	FORCEINLINE EWeaponState GetWeaponState() const { return WeaponState; }
+	FORCEINLINE void SetFireSound(USoundCue* Sound) { FireSound = Sound; }
+	FORCEINLINE void SetReloadSound(USoundCue* Sound) { ReloadSound = Sound; }
+	FORCEINLINE void SetSmokeTrail(UParticleSystem* Particle) { SmokeTrail = Particle; }
+	FORCEINLINE void SetWeaponMesh(UStaticMesh* Mesh) { WeaponMesh->SetStaticMesh(Mesh); }
 private:
 	void SetUpWeaponProperties(EWeaponState State);
 };

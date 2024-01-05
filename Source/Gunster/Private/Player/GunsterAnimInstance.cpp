@@ -17,10 +17,7 @@ void UGunsterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 {
 	JogAnimUpdate();
 	AimOffsetUpdate();
-	UE_LOG(LogTemp, Warning, TEXT("AimOffset:%s"), *AimOffset.ToString());
 	checkIfAiming();
-	UE_LOG(LogTemp, Warning, TEXT("AimOffset:%s"), *AimOffset.ToString());
-
 }
 
 void UGunsterAnimInstance::JogAnimUpdate()
@@ -64,7 +61,6 @@ void UGunsterAnimInstance::AimOffsetUpdate()
 			FRotator ControlRotator = Controller->GetControlRotation();
 			FRotator ToOrientationRotator = OwningCharacter->GetActorForwardVector().ToOrientationRotator();
 			AimOffset = UKismetMathLibrary::NormalizedDeltaRotator(ControlRotator, ToOrientationRotator);
-
 		}
 	}
 }

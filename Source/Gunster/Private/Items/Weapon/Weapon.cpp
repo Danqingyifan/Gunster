@@ -18,7 +18,7 @@
 #include "TimerManager.h"
 
 AWeapon::AWeapon()
-	:bShouldFire(false), bCanFire(true), FireRate(0.1f), ReloadTime(1.5f), FireState(EFireState::ECS_Unoccupied) // Fire Params Init
+	:bShouldFire(false), bCanFire(true), FireState(EFireState::ECS_Unoccupied) // Fire Params Init
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -33,7 +33,6 @@ AWeapon::AWeapon()
 	CollisionBox->SetupAttachment(RootComponent);
 	CollisionBox->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-
 }
 
 void AWeapon::BeginPlay()
@@ -63,16 +62,28 @@ void AWeapon::ReloadMagazine()
 {
 	bCanFire = false;
 	PlayReloadSound();
-	GetWorld()->GetTimerManager().SetTimer
-	(
-		TimerHandle,
-		([this]() {
-			bCanFire = true;
-			}),
-		ReloadTime,
-		false
-	);
-	LeftAmmo = ClipCapacity;
+	if (StartingAmmo > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			TimerHandle,
+			([this]() {
+				bCanFire = true;
+				if (StartingAmmo >= (ClipCapacity - LeftAmmo))
+				{
+					StartingAmmo -= (ClipCapacity - LeftAmmo);
+					LeftAmmo = ClipCapacity;
+				}
+				else
+				{
+					LeftAmmo = LeftAmmo + StartingAmmo;
+					StartingAmmo = 0;
+				}
+				}),
+			ReloadTime,
+			false
+		);
+	}
 }
 
 void AWeapon::SetUpWeaponState(EWeaponState State)
@@ -95,6 +106,51 @@ void AWeapon::SetUpWeaponState(EWeaponState State)
 	WeaponState = State;
 }
 
+
+// note that every variable you change OnConstruction() must be UPROPERTY()
+// otherwise it will be defaulted on BeginPlay();
+void AWeapon::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	const FString WeaponDataTablePath{ TEXT("/Script/Engine.DataTable'/Game/Gunster/Weapon/DataTable/DT_WeaponDataTable.DT_WeaponDataTable'") };
+	UDataTable* DataTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *WeaponDataTablePath));
+	if (DataTableObject)
+	{
+		FWeaponDataTable* WeaponDataRow = nullptr;
+		switch (WeaponType)
+		{
+		case EWeaponType::EWT_Pistol:
+			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("Pistol"), TEXT(""));
+			break;
+		case EWeaponType::EWT_Shotgun:
+			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("ShotGun"), TEXT(""));
+			break;
+		case EWeaponType::EWT_SMG:
+			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("SMG"), TEXT(""));
+			break;
+		case EWeaponType::EWT_Rifle:
+			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("Rifle"), TEXT(""));
+			break;
+		case EWeaponType::EWT_MAX:
+			UE_LOG(LogTemp, Display, TEXT("WeaponType NOT SET"));
+			break;
+		}
+
+		if (WeaponDataRow)
+		{
+			WeaponName = WeaponDataRow->WeaponName;
+			StartingAmmo = WeaponDataRow->StartingAmmo;
+			ClipCapacity = WeaponDataRow->ClipCapacity;
+			FireRate = WeaponDataRow->FireRate;
+			ReloadTime = WeaponDataRow->ReloadTime;
+
+			SetFireSound(WeaponDataRow->FireSound);
+			SetSmokeTrail(WeaponDataRow->SmokeTrail);
+			SetWeaponMesh(WeaponDataRow->WeaponMesh);
+		}
+	}
+}
+
 // Implementation
 
 //Weapon Fire
@@ -102,33 +158,31 @@ void AWeapon::Fire()
 {
 	if (bCanFire)
 	{
+
+		FireState = EFireState::ECS_Firing;
+		bCanFire = false;
 		if (LeftAmmo > 0)
 		{
-			FireState = EFireState::ECS_Firing;
-			bCanFire = false;
 			TrackTrajectory();
 			LeftAmmo--;
-			//Using Lambda Delegate
-			GetWorld()->GetTimerManager().SetTimer
-			(
-				TimerHandle,
-				([this]() {
-					bCanFire = true;
-					}),
-				FireRate,
-				false
-			);
-			UE_LOG(LogTemp, Warning, TEXT("AMMO: %d"), LeftAmmo);
 		}
 		else
 		{
-			FireState = EFireState::ECS_Reloading;
-			ReloadMagazine();
+			PlayOutOfAmmoSound();
 		}
+		//Using Lambda Delegate
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			TimerHandle,
+			([this]() {
+				bCanFire = true;
+				}),
+			FireRate,
+			false
+		);
+		UE_LOG(LogTemp, Warning, TEXT("AMMO: %d"), LeftAmmo);
 	}
 }
-
-
 
 void AWeapon::TrackTrajectory()
 {
@@ -206,6 +260,14 @@ void AWeapon::PlayReloadSound()
 	if (ReloadSound)
 	{
 		UGameplayStatics::PlaySound2D(this, ReloadSound);
+	}
+}
+
+void AWeapon::PlayOutOfAmmoSound()
+{
+	if (OutOfAmmoSound)
+	{
+		UGameplayStatics::PlaySound2D(this, OutOfAmmoSound);
 	}
 }
 
