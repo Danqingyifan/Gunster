@@ -198,7 +198,7 @@ void AWeapon::TrackTrajectory()
 
 	FHitResult CrossHairTrace;
 	FVector CrossHairStart{ CrossHairWorldPosition };
-	FVector CrossHairEnd{ CrossHairStart + CrossHairWorldDirection * 1'000 };
+	FVector CrossHairEnd{ CrossHairStart + CrossHairWorldDirection * 3'000 };
 	GetWorld()->LineTraceSingleByChannel(CrossHairTrace, CrossHairStart, CrossHairEnd, ECollisionChannel::ECC_Visibility);
 	if (CrossHairTrace.bBlockingHit)
 	{

@@ -21,13 +21,14 @@ void AGunsterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	SetupInputComponent();
+	SetUpCrossHair();
 	LimitCameraView();
 }
 
 void AGunsterPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+	CalculateCrossHairSpread(DeltaTime);
 	//DrawHUD
 }
 
@@ -37,6 +38,56 @@ void AGunsterPlayerController::SetupInputComponent()
 	{
 		Subsystem->AddMappingContext(GravesMappingContext, 0);
 	}
+}
+
+void AGunsterPlayerController::SetUpCrossHair()
+{
+	CrossHairSpreadBase = 4.0f;
+	CrossHairSpreadMultiplier = 1.0f;
+	CrossHairVelocityFactor = 1.0f;
+	CrossHairAimFactor = 1.0f;
+	CrossHairShootingFactor = 1.0f;
+}
+
+void AGunsterPlayerController::CalculateCrossHairSpread(float DeltaTime)
+{
+	FVector2D WalkSpeedRange{ 0.0f, 250.0f };
+	FVector2D VelocityMultiplierRange{ 1.0f, 2.0f };
+
+	if (ACharacter* OwningCharacter = GetCharacter())
+	{
+		if (AGunsterCharacter* GunsterCharacter = Cast<AGunsterCharacter>(OwningCharacter))
+		{
+			//Velocity
+			CrossHairVelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityMultiplierRange, GunsterCharacter->GetVelocity().Size());
+
+			//Aiming
+			if (GunsterCharacter->GetIsAiming())
+			{
+				CrossHairAimFactor = FMath::FInterpTo(CrossHairAimFactor, 0.7f, GetWorld()->GetDeltaSeconds(), 60.0f);
+			}
+			else
+			{
+				CrossHairAimFactor = FMath::FInterpTo(CrossHairAimFactor, 1.0f, GetWorld()->GetDeltaSeconds(), 60.0f);
+			}
+
+			//Shooting
+			if (GunsterCharacter->GetIsShooting())
+			{
+				CrossHairShootingFactor = FMath::FInterpTo(CrossHairShootingFactor, 3.0f, GetWorld()->GetDeltaSeconds(), 60.0f);
+			}
+			else
+			{
+				CrossHairShootingFactor = FMath::FInterpTo(CrossHairShootingFactor, 1.0f, GetWorld()->GetDeltaSeconds(), 60.0f);
+			}
+		}
+	}
+	CrossHairSpreadMultiplier = 1.0f * CrossHairAimFactor * CrossHairVelocityFactor * CrossHairShootingFactor;
+}
+
+float AGunsterPlayerController::GetCrossHairSpreadMultiplier() const
+{
+	return CrossHairSpreadMultiplier;
 }
 
 bool AGunsterPlayerController::DeprojectCrossHairToWorld(FVector& CrossHairWorldPosition, FVector& CrossHairWorldDirection)

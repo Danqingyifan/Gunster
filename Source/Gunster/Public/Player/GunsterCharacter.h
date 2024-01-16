@@ -34,6 +34,8 @@ private:
 	class AWeapon* RightHoldingWeapon;
 
 	bool bIsAiming;
+	bool bIsShooting;
+
 	//Montage Segment
 	class UAnimInstance* AnimInstance;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
@@ -92,5 +94,6 @@ private:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
+	FORCEINLINE bool GetIsShooting() const { return bIsShooting; }
 };
 

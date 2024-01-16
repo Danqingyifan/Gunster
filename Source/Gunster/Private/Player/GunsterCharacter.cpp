@@ -172,19 +172,17 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 }
 
 void AGunsterCharacter::PullTrigger()
-{
+{	
 	if (LeftHoldingWeapon && bIsAiming)
-	{
+	{	
 		LeftHoldingWeapon->StartFire();
+		bIsShooting = true;
 		if (AnimInstance && StrafeMontage)
 		{
 			AnimInstance->Montage_Play(StrafeMontage);
 			AnimInstance->Montage_JumpToSection(FName("Strafe"));
 		}
-	}
-	if (RightHoldingWeapon)
-	{
-		RightHoldingWeapon->StartFire();
+
 	}
 }
 
@@ -193,10 +191,7 @@ void AGunsterCharacter::ReleaseTrigger()
 	if (LeftHoldingWeapon)
 	{
 		LeftHoldingWeapon->StopFire();
-	}
-	if (RightHoldingWeapon)
-	{
-		RightHoldingWeapon->StopFire();
+		bIsShooting = false;
 	}
 }
 
@@ -210,10 +205,6 @@ void AGunsterCharacter::Reload()
 			AnimInstance->Montage_Play(ReloadMontage);
 			AnimInstance->Montage_JumpToSection(FName("Reload"));
 		}
-	}
-	if (RightHoldingWeapon)
-	{
-		RightHoldingWeapon->ReloadMagazine();
 	}
 }
 

@@ -17,6 +17,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupInputComponent() override;
+
+	void SetUpCrossHair();
 	// IMC and IA Segment
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* GravesMappingContext;
@@ -36,18 +38,31 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ReloadAction;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
 	class AHUD* crossHair;
 public:
 	//CrossHair
+	UFUNCTION(BlueprintCallable, Category = "CrossHair")
+	float GetCrossHairSpreadMultiplier() const;
+
+	void CalculateCrossHairSpread(float DeltaTime);
+
 	bool DeprojectCrossHairToWorld(FVector& CrossHairWorldPosition, FVector& CrossHairWorldDirection);
-	
+
 	//Camera
 	void LimitCameraView();
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
 	class AHUD* StrafeHUD;
-
 private:
 	uint8 CharacterFireState;
+
+	//CrossHair
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
+	float CrossHairSpreadBase;
+	float CrossHairSpreadMultiplier;
+
+	float CrossHairVelocityFactor;
+	float CrossHairAimFactor;
+	float CrossHairShootingFactor;
 };
