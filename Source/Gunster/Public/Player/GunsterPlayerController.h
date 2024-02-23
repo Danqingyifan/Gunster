@@ -52,11 +52,14 @@ public:
 	//Camera
 	void LimitCameraView();
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
-	class AHUD* StrafeHUD;
-private:
-	uint8 CharacterFireState;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UUserWidget> HUDOverlayClass;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Widgets",meta = (AllowPrivateAccess="true"))
+	UUserWidget* HUDOverlay;
+	
+	void DrawHUDOverlayToScreen();
 
+private:
 	//CrossHair
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
 	float CrossHairSpreadBase;

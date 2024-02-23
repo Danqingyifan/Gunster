@@ -19,7 +19,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 
 AGunsterCharacter::AGunsterCharacter()
-	:bIsAiming(false), IdleFOV(100.f), AimFOV(50.f)
+	:bIsAiming(false), bIsShooting(false), bIsReloading(false), IdleFOV(100.f), AimFOV(50.f), MaxHealth(100)
 {
 	SetUpCamera();
 	SetUpControllerRotation();
@@ -30,7 +30,7 @@ void AGunsterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnDefaultWeapon();
-	AnimInstance = GetMesh()->GetAnimInstance();
+	Health = MaxHealth;
 }
 
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -93,22 +93,19 @@ void AGunsterCharacter::SetUpCharacterMovement()
 void AGunsterCharacter::SpawnDefaultWeapon()
 {
 	const USkeletalMeshSocket* RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
-	const USkeletalMeshSocket* LeftHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
 	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
-	if (DefaultWeaponClass && (LeftHandSocket || RightHandSocket))
+
+	if (DefaultWeaponClass && RightHandSocket)
 	{
-		LeftHoldingWeapon = SpawnWeapon(LeftHandSocket, DefaultWeaponClass);
+		EquippedWeapon = SpawnWeapon(RightHandSocket, DefaultWeaponClass);
 		//RightHoldingWeapon = SpawnWeapon(RightHandSocket, DefaultWeaponClass);
 
-		if (LeftHoldingWeapon)
+		if (EquippedWeapon)
 		{
-			AttachWeapon(LeftHoldingWeapon, LeftHandSocket);
-		}
-		if (RightHoldingWeapon)
-		{
-			AttachWeapon(RightHoldingWeapon, RightHandSocket);
+			AttachWeapon(EquippedWeapon, RightHandSocket);
 		}
 	}
+
 }
 
 void AGunsterCharacter::SetUpInput(UInputComponent* PlayerInputComponent)
@@ -172,11 +169,12 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 }
 
 void AGunsterCharacter::PullTrigger()
-{	
-	if (LeftHoldingWeapon && bIsAiming)
-	{	
-		LeftHoldingWeapon->StartFire();
+{
+	if (EquippedWeapon && bIsAiming && EquippedWeapon->GetCanFire())
+	{
 		bIsShooting = true;
+		EquippedWeapon->StartFire();
+		AnimInstance = GetMesh()->GetAnimInstance();
 		if (AnimInstance && StrafeMontage)
 		{
 			AnimInstance->Montage_Play(StrafeMontage);
@@ -188,22 +186,23 @@ void AGunsterCharacter::PullTrigger()
 
 void AGunsterCharacter::ReleaseTrigger()
 {
-	if (LeftHoldingWeapon)
+	if (EquippedWeapon)
 	{
-		LeftHoldingWeapon->StopFire();
+		EquippedWeapon->StopFire();
 		bIsShooting = false;
 	}
 }
 
 void AGunsterCharacter::Reload()
 {
-	if (LeftHoldingWeapon)
+	if (EquippedWeapon)
 	{
-		LeftHoldingWeapon->ReloadMagazine();
-		if (AnimInstance && ReloadMontage)
+		AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && ReloadMontage && EquippedWeapon->GetCanReload())
 		{
+			EquippedWeapon->ReloadMagazine();
 			AnimInstance->Montage_Play(ReloadMontage);
-			AnimInstance->Montage_JumpToSection(FName("Reload"));
+			AnimInstance->Montage_JumpToSection(FName("Reload SMG"));
 		}
 	}
 }

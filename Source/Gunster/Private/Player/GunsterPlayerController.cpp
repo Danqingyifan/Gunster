@@ -8,6 +8,7 @@
 #include "GameFramework/HUD.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Blueprint/UserWidget.h"
 
 #include "Player/GunsterCharacter.h"
 #include "GameFramework/Character.h"
@@ -23,6 +24,7 @@ void AGunsterPlayerController::BeginPlay()
 	SetupInputComponent();
 	SetUpCrossHair();
 	LimitCameraView();
+	DrawHUDOverlayToScreen();
 }
 
 void AGunsterPlayerController::Tick(float DeltaTime)
@@ -52,7 +54,7 @@ void AGunsterPlayerController::SetUpCrossHair()
 void AGunsterPlayerController::CalculateCrossHairSpread(float DeltaTime)
 {
 	FVector2D WalkSpeedRange{ 0.0f, 250.0f };
-	FVector2D VelocityMultiplierRange{ 1.0f, 2.0f };
+	FVector2D VelocityMultiplierRange{ 1.0f, 3.0f };
 
 	if (ACharacter* OwningCharacter = GetCharacter())
 	{
@@ -64,21 +66,21 @@ void AGunsterPlayerController::CalculateCrossHairSpread(float DeltaTime)
 			//Aiming
 			if (GunsterCharacter->GetIsAiming())
 			{
-				CrossHairAimFactor = FMath::FInterpTo(CrossHairAimFactor, 0.7f, GetWorld()->GetDeltaSeconds(), 60.0f);
+				CrossHairAimFactor = FMath::FInterpTo(CrossHairAimFactor, 0.7f, GetWorld()->GetDeltaSeconds(), 30.0f);
 			}
 			else
 			{
-				CrossHairAimFactor = FMath::FInterpTo(CrossHairAimFactor, 1.0f, GetWorld()->GetDeltaSeconds(), 60.0f);
+				CrossHairAimFactor = FMath::FInterpTo(CrossHairAimFactor, 1.0f, GetWorld()->GetDeltaSeconds(), 30.0f);
 			}
 
 			//Shooting
 			if (GunsterCharacter->GetIsShooting())
 			{
-				CrossHairShootingFactor = FMath::FInterpTo(CrossHairShootingFactor, 3.0f, GetWorld()->GetDeltaSeconds(), 60.0f);
+				CrossHairShootingFactor = FMath::FInterpTo(CrossHairShootingFactor, 5.0f, GetWorld()->GetDeltaSeconds(), 30.0f);
 			}
 			else
 			{
-				CrossHairShootingFactor = FMath::FInterpTo(CrossHairShootingFactor, 1.0f, GetWorld()->GetDeltaSeconds(), 60.0f);
+				CrossHairShootingFactor = FMath::FInterpTo(CrossHairShootingFactor, 1.0f, GetWorld()->GetDeltaSeconds(), 30.0f);
 			}
 		}
 	}
@@ -117,5 +119,18 @@ void AGunsterPlayerController::LimitCameraView()
 
 	Manager->ViewPitchMax = 70.0f;
 	Manager->ViewPitchMin = -70.0f;
+}
+
+void AGunsterPlayerController::DrawHUDOverlayToScreen()
+{
+	if (HUDOverlayClass)
+	{
+		HUDOverlay = CreateWidget<UUserWidget>(this,HUDOverlayClass);
+		if (HUDOverlay)
+		{
+			HUDOverlay->AddToViewport();
+			HUDOverlay->SetVisibility(ESlateVisibility::Visible);
+		}
+	}
 }
 

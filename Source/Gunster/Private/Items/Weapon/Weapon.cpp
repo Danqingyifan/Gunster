@@ -4,6 +4,7 @@
 #include "Items/Weapon/Weapon.h"
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
+#include "Enemy/Enemy.h"
 
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystem.h"
@@ -38,7 +39,8 @@ AWeapon::AWeapon()
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	LeftAmmo = ClipCapacity;
+	WeaponAmmo = ClipCapacity;
+	FireState = EFireState::ECS_Unoccupied;
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -56,34 +58,6 @@ void AWeapon::StartFire()
 void AWeapon::StopFire()
 {
 	bShouldFire = false;
-}
-
-void AWeapon::ReloadMagazine()
-{
-	bCanFire = false;
-	PlayReloadSound();
-	if (StartingAmmo > 0)
-	{
-		GetWorld()->GetTimerManager().SetTimer
-		(
-			TimerHandle,
-			([this]() {
-				bCanFire = true;
-				if (StartingAmmo >= (ClipCapacity - LeftAmmo))
-				{
-					StartingAmmo -= (ClipCapacity - LeftAmmo);
-					LeftAmmo = ClipCapacity;
-				}
-				else
-				{
-					LeftAmmo = LeftAmmo + StartingAmmo;
-					StartingAmmo = 0;
-				}
-				}),
-			ReloadTime,
-			false
-		);
-	}
 }
 
 void AWeapon::SetUpWeaponState(EWeaponState State)
@@ -143,6 +117,8 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			ClipCapacity = WeaponDataRow->ClipCapacity;
 			FireRate = WeaponDataRow->FireRate;
 			ReloadTime = WeaponDataRow->ReloadTime;
+			BaseDamage = WeaponDataRow->BaseDamage;
+			HeadShotMultiplier = WeaponDataRow->HeadShotMultiplier;
 
 			SetFireSound(WeaponDataRow->FireSound);
 			SetSmokeTrail(WeaponDataRow->SmokeTrail);
@@ -156,35 +132,36 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 //Weapon Fire
 void AWeapon::Fire()
 {
-	if (bCanFire)
+	if (bCanFire && FireState == EFireState::ECS_Unoccupied)
 	{
-
 		FireState = EFireState::ECS_Firing;
 		bCanFire = false;
-		if (LeftAmmo > 0)
+		if (WeaponAmmo > 0)
 		{
 			TrackTrajectory();
-			LeftAmmo--;
+			//Using Lambda Delegate
+			GetWorld()->GetTimerManager().SetTimer
+			(
+				TimerHandle,
+				([this]() {
+					bCanFire = true;
+					FireState = EFireState::ECS_Unoccupied;
+					}),
+				FireRate,
+				false
+			);
+			WeaponAmmo--;
 		}
 		else
 		{
+			AGunsterCharacter* WeaponOwner = Cast<AGunsterCharacter>(GetOwner());
+			WeaponOwner->Reload();
 			PlayOutOfAmmoSound();
 		}
-		//Using Lambda Delegate
-		GetWorld()->GetTimerManager().SetTimer
-		(
-			TimerHandle,
-			([this]() {
-				bCanFire = true;
-				}),
-			FireRate,
-			false
-		);
-		UE_LOG(LogTemp, Warning, TEXT("AMMO: %d"), LeftAmmo);
 	}
 }
 
-void AWeapon::TrackTrajectory()
+FHitResult AWeapon::TrackTrajectory()
 {
 	FVector CrossHairWorldPosition;
 	FVector CrossHairWorldDirection;
@@ -221,8 +198,65 @@ void AWeapon::TrackTrajectory()
 	if (FireHit.bBlockingHit)
 	{
 		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 15.f, 24, FColor::Green, false, 3.0f);
-		PlayImpactVFX(FireHit);
+		if (IOnBulletHitInterface* BulletHitInterface = Cast<IOnBulletHitInterface>(FireHit.GetActor())) // Check if the hit actor is a valid target
+		{
+			BulletHitInterface->OnBulletHit_Implementation(FireHit);
+			if (AEnemy* HitEnemy = Cast<AEnemy>(FireHit.GetActor()))
+			{	
+				if (auto WeaponOwner = Cast<AGunsterCharacter>(GetOwner()))
+				{
+					if (FireHit.BoneName == "head")
+					{
+						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage * HeadShotMultiplier, WeaponOwner->GetController(), this, UDamageType::StaticClass());
+					}
+					else
+					{
+						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage, WeaponOwner->GetController(), this, UDamageType::StaticClass());
+					}
+				}
+
+			}
+		}
+		else
+		{
+			PlayDefaultImpactVFX(FireHit);
+		}
+
 	}
+	return FireHit;
+}
+
+void AWeapon::ReloadMagazine()
+{	
+	if (StartingAmmo > 0 && WeaponAmmo < ClipCapacity && FireState != EFireState::ECS_Reloading)
+	{
+		bCanFire = false;
+		FireState = EFireState::ECS_Reloading;
+
+		GetWorld()->GetTimerManager().SetTimer
+		(
+			TimerHandle,
+			([this]() {
+				bCanFire = true;
+				FireState = EFireState::ECS_Unoccupied;
+
+				if (StartingAmmo >= (ClipCapacity - WeaponAmmo))
+				{
+					StartingAmmo -= (ClipCapacity - WeaponAmmo);
+					WeaponAmmo = ClipCapacity;
+				}
+				else
+				{
+					WeaponAmmo = WeaponAmmo + StartingAmmo;
+					StartingAmmo = 0;
+				}
+				}),
+			ReloadTime,
+			false
+		);
+		PlayReloadSound();
+	}
+
 }
 
 void AWeapon::PlayFireSound()
@@ -249,7 +283,7 @@ void AWeapon::PlayFireVFX(FVector& EndPoint)
 	}
 }
 
-void AWeapon::PlayImpactVFX(FHitResult& HitResult)
+void AWeapon::PlayDefaultImpactVFX(FHitResult& HitResult)
 {
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactFlash, HitResult.Location);
 }

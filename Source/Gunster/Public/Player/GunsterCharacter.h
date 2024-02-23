@@ -30,11 +30,8 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AWeapon> DefaultWeaponClass;
 
-	class AWeapon* LeftHoldingWeapon;
-	class AWeapon* RightHoldingWeapon;
-
-	bool bIsAiming;
-	bool bIsShooting;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
+	class AWeapon* EquippedWeapon;
 
 	//Montage Segment
 	class UAnimInstance* AnimInstance;
@@ -53,7 +50,19 @@ private:
 	float IdleFOV;
 	float AimFOV;
 
-protected:
+private:
+	//FireState
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "FireState", meta = (AllowPrivateAccess = "true"))
+	bool bIsAiming;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "FireState", meta = (AllowPrivateAccess = "true"))
+	bool bIsShooting;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "FireState", meta = (AllowPrivateAccess = "true"))
+	bool bIsReloading;
+
+	//Health
+	float MaxHealth;
+	float Health;
+public:
 	// Basic Segment
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -92,7 +101,6 @@ private:
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 	FORCEINLINE bool GetIsShooting() const { return bIsShooting; }
 };
