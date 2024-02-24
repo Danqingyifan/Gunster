@@ -5,9 +5,11 @@
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Animation/AnimMontage.h"
+#include "Blueprint/UserWidget.h"
+
 // Sets default values
 AEnemy::AEnemy()
-	:MaxHealth(100.f), HealthBarDisplayTime(3.f)
+	:MaxHealth(100.f), HealthBarDisplayTime(3.f), bCanReactToHit(true)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -20,13 +22,13 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 	Health = MaxHealth;
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-
 }
 
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UpdateHitWidgetLocation();
 }
 
 // Called to bind functionality to input
@@ -47,7 +49,7 @@ void AEnemy::OnBulletHit_Implementation(FHitResult HitResult)
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, HitResult.Location, FRotator(0), true);
 	}
 	ShowHealthBar();
-	PlayMontageBySection(BulletHitMontage, FName("HitReactFront"), 1.0f);
+	PlayHitMontage();
 }
 
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -78,17 +80,68 @@ void AEnemy::Die()
 {
 	HideHealthBar();
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	PlayMontageBySection(BulletHitMontage, FName("DeathToBack"), 1.f);
-	GetWorld()->GetTimerManager().ClearTimer(DestroyTimer);
+	PlayDeathMontage();
+	FTimerHandle MontagePauseTimer, DestroyTimer;
+	GetWorld()->GetTimerManager().SetTimer(MontagePauseTimer, ([this]() { GetMesh()->GetAnimInstance()->Montage_Pause(); }), 1.25f, false);
+	GetWorld()->GetTimerManager().SetTimer(DestroyTimer, ([this]() { Destroy(); }), 2.f, false);
 }
 
-void AEnemy::PlayMontageBySection(UAnimMontage* Montage, FName Section, float PlayRate)
+void AEnemy::PlayHitMontage(float PlayRate /*= 1.f*/)
+{
+	if (bCanReactToHit)
+	{
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance)
+		{
+			AnimInstance->Montage_Play(BulletHitMontage, PlayRate);
+			AnimInstance->Montage_JumpToSection("HitReactFront", BulletHitMontage);
+		}
+		bCanReactToHit = false;
+		GetWorld()->GetTimerManager().SetTimer(HitReactTimer, ([this]() { bCanReactToHit = true; }), FMath::FRandRange(0.5f, 1.f), false);
+	}
+}
+
+void AEnemy::PlayDeathMontage(float PlayRate /*= 1.f*/)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance)
 	{
-		AnimInstance->Montage_Play(Montage, PlayRate);
-		AnimInstance->Montage_JumpToSection(Section, Montage);
+		AnimInstance->Montage_Play(BulletHitMontage, PlayRate);
+		AnimInstance->Montage_JumpToSection("DeathToBack", BulletHitMontage);
+	}
+}
+
+void AEnemy::StoreHitWidget(UUserWidget* HitWidget, FVector HitLocation)
+{
+	HitAmountWidgetsMap.Add(HitWidget, HitLocation);
+	// Then remove them
+	FTimerHandle RemoveHitWidgetTimer;
+	GetWorld()->GetTimerManager().SetTimer(RemoveHitWidgetTimer,
+		([this, HitWidget]()
+			{
+				RemoveHitWidget(HitWidget);
+			}),
+		1.5f, false);
+
+}
+
+void AEnemy::RemoveHitWidget(class UUserWidget* HitWidget)
+{
+	HitAmountWidgetsMap.Remove(HitWidget);
+	HitWidget->RemoveFromParent();
+}
+
+void AEnemy::UpdateHitWidgetLocation()
+{
+	for (auto& HitWidgetPair : HitAmountWidgetsMap)
+	{
+
+		UUserWidget* HitWidget{ HitWidgetPair.Key };
+		FVector HitLocation{ HitWidgetPair.Value };
+
+		FVector2D ScreenLocation;
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), HitLocation, ScreenLocation);
+		HitWidget->SetPositionInViewport(ScreenLocation);
 	}
 }
 

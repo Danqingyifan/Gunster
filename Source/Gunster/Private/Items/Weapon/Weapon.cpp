@@ -202,17 +202,24 @@ FHitResult AWeapon::TrackTrajectory()
 		{
 			BulletHitInterface->OnBulletHit_Implementation(FireHit);
 			if (AEnemy* HitEnemy = Cast<AEnemy>(FireHit.GetActor()))
-			{	
+			{
+				float Damage;
+				bool bIsHeadShot;
 				if (auto WeaponOwner = Cast<AGunsterCharacter>(GetOwner()))
 				{
 					if (FireHit.BoneName == "head")
 					{
 						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage * HeadShotMultiplier, WeaponOwner->GetController(), this, UDamageType::StaticClass());
+						Damage = BaseDamage * HeadShotMultiplier;
+						bIsHeadShot = true;
 					}
 					else
 					{
 						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage, WeaponOwner->GetController(), this, UDamageType::StaticClass());
+						Damage = BaseDamage;
+						bIsHeadShot = false;
 					}
+					HitEnemy->ShowHitDamageAmount(Damage, FireHit.Location, bIsHeadShot);
 				}
 
 			}
@@ -227,7 +234,7 @@ FHitResult AWeapon::TrackTrajectory()
 }
 
 void AWeapon::ReloadMagazine()
-{	
+{
 	if (StartingAmmo > 0 && WeaponAmmo < ClipCapacity && FireState != EFireState::ECS_Reloading)
 	{
 		bCanFire = false;

@@ -16,6 +16,7 @@ public:
 	// Sets default values for this character's properties
 	AEnemy();
 
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -36,9 +37,15 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void HideHealthBar();
-	void Die();
-	void PlayMontageBySection(class UAnimMontage* Montage,FName Section, float PlayRate);
 
+	void Die();
+	void PlayHitMontage(float PlayRate = 1.f);
+	void PlayDeathMontage(float PlayRate = 1.f);
+
+	UFUNCTION(BlueprintCallable)
+	void StoreHitWidget(class UUserWidget* HitWidget, FVector HitLocation);
+	void RemoveHitWidget(class UUserWidget* HitWidget);
+	void UpdateHitWidgetLocation();
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -50,11 +57,16 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowHitDamageAmount(float Damage, FVector HitLocation, bool bIsHeadShot);
 private:
 	FTimerHandle HealthBarTimer;
-	FTimerHandle DestroyTimer;
 	float HealthBarDisplayTime;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimInstance", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* BulletHitMontage;
+	FTimerHandle HitReactTimer;
+	bool bCanReactToHit;
+	
+	TMap<class UUserWidget*,FVector> HitAmountWidgetsMap;
 };
