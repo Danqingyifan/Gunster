@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "OnBulletHitInterface.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
@@ -9,7 +11,7 @@
 
 // Character play FiringAction animation According to this state enum
 UCLASS(config = Game)
-class AGunsterCharacter : public ACharacter
+class AGunsterCharacter : public ACharacter,public IOnBulletHitInterface
 {
 	GENERATED_BODY()
 
@@ -103,5 +105,6 @@ private:
 public:
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 	FORCEINLINE bool GetIsShooting() const { return bIsShooting; }
+	void OnBulletHit_Implementation(FHitResult HitResult) override;
 };
 

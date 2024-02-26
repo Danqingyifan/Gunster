@@ -46,6 +46,11 @@ protected:
 	void StoreHitWidget(class UUserWidget* HitWidget, FVector HitLocation);
 	void RemoveHitWidget(class UUserWidget* HitWidget);
 	void UpdateHitWidgetLocation();
+
+	FVector TransformLocalToWorld(FVector LocalLocation);
+
+	UFUNCTION()
+	void OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -59,6 +64,14 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitDamageAmount(float Damage, FVector HitLocation, bool bIsHeadShot);
+
+	FORCEINLINE class UBehaviorTree* GetBehaviorTree() const { return BehaviorTree; }
+
+	UFUNCTION(BlueprintCallable)
+	void SetStunned(bool Stunned);
+
+	UFUNCTION(BlueprintCallable)
+	void SetDead(bool Dead);
 private:
 	FTimerHandle HealthBarTimer;
 	float HealthBarDisplayTime;
@@ -67,6 +80,25 @@ private:
 	class UAnimMontage* BulletHitMontage;
 	FTimerHandle HitReactTimer;
 	bool bCanReactToHit;
-	
-	TMap<class UUserWidget*,FVector> HitAmountWidgetsMap;
+	TMap<class UUserWidget*, FVector> HitAmountWidgetsMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "BehaviorTree", meta = (AllowPrivateAccess = "true"))
+	class UBehaviorTree* BehaviorTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AIBehavior", meta = (AllowPrivateAccess = "true", MakeEditWidget = "true"))
+	// MakeEditWidget = "true" make the variable become relative(local space) to the Enemy(transform),and visible in the editor
+	FVector PatrolPoint;
+
+	class AEnemyAIController* EnemyAIController;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AgroSphere", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* AgroSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool bIsStunned;
+	float StunProbability;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool bIsDead;
+
 };

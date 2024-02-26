@@ -300,3 +300,8 @@ void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket*
 	}
 }
 
+void AGunsterCharacter::OnBulletHit_Implementation(FHitResult HitResult)
+{
+
+}
+
