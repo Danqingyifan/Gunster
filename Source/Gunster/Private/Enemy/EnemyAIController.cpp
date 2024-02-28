@@ -13,6 +13,7 @@ AEnemyAIController::AEnemyAIController()
 	check(BlackboardComponent);
 	BehaviorTreeComponent = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComponent"));
 	check(BehaviorTreeComponent);
+	
 }
 
 void AEnemyAIController::OnPossess(APawn* InPawn)

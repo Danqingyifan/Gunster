@@ -31,6 +31,9 @@ void AGunsterCharacter::BeginPlay()
 	Super::BeginPlay();
 	SpawnDefaultWeapon();
 	Health = MaxHealth;
+
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -59,7 +62,6 @@ void AGunsterCharacter::SetUpControllerRotation()
 
 void AGunsterCharacter::SetUpCamera()
 {
-
 	// Create a camera boom
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);

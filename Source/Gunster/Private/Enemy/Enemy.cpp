@@ -12,17 +12,28 @@
 #include "DrawDebugHelpers.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values
 AEnemy::AEnemy()
 	:MaxHealth(100.f), HealthBarDisplayTime(3.f), bCanReactToHit(true), bIsStunned(false),
-	StunProbability(0.2f), bIsDead(false)
+	StunProbability(0.2f), bIsDead(false), bIsInCombatRange(false)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	AgroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AgroSphere"));
-	AgroSphere->SetupAttachment(GetRootComponent());
+	AgroRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AgroRangeSphere"));
+	AgroRangeSphere->SetupAttachment(GetRootComponent());
+
+	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRangeSphere"));
+	CombatRangeSphere->SetupAttachment(GetRootComponent());
+	
+	//Orient to Movement
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	bUseControllerRotationYaw = false; 
+	//Arrow Component is the real direction of the character facing
+	//Remenber to adjust the direction of the character to be identical to Arrow Component  in the blueprint
 }
 
 // Called when the game starts or when spawned
@@ -31,6 +42,11 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 	Health = MaxHealth;
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	
+	//ignore camera
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	//BUG::Can't detect the GunsterCharacter after adding below
+	//GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	FVector WorldPatrolPoint = TransformLocalToWorld(PatrolPoint);
 	// Set the AI Controller
@@ -41,7 +57,10 @@ void AEnemy::BeginPlay()
 		EnemyAIController->RunBehaviorTree(BehaviorTree);
 	}
 
-	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnAgroSphereOverlap);
+	// Function Binded must be UFUNCTION, otherwise, it will not be called
+	AgroRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnAgroSphereOverlap);
+	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereOverlap);
+	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereEndOverlap);
 }
 
 // Called every frame
@@ -152,6 +171,32 @@ void AEnemy::PlayDeathMontage(float PlayRate /*= 1.f*/)
 	}
 }
 
+void AEnemy::PlayCombatMontage(FName Section, float PlayRate /*= 1.f*/)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance)
+	{
+		AnimInstance->Montage_Play(CombatMontage, PlayRate);
+		AnimInstance->Montage_JumpToSection(Section, CombatMontage);
+	}
+}
+
+FName AEnemy::GetCombatSection()
+{
+	FName SectionName;
+	const int32 SectionPick = FMath::RandRange(1, 2);
+	switch (SectionPick)
+	{
+	case 1:
+		SectionName = "ComboL";
+		break;
+	case 2:
+		SectionName = "ComboR";
+		break;
+	}
+	return SectionName;
+}
+
 void AEnemy::StoreHitWidget(UUserWidget* HitWidget, FVector HitLocation)
 {
 	HitAmountWidgetsMap.Add(HitWidget, HitLocation);
@@ -195,10 +240,47 @@ void AEnemy::OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	if (OtherActor == nullptr) return;
 
 	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
-	{
+	{	
+		Target->ShowBossHealthBar(this);
 		if (EnemyAIController)
 		{
 			EnemyAIController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Target);
+		}
+	}
+}
+
+void AEnemy::OnAgroSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
+	{
+		Target->HideBossHealthBar();
+	}
+}
+
+void AEnemy::OnCombatRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor == nullptr) return;
+
+	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
+	{
+		bIsInCombatRange = true;
+		if (EnemyAIController)
+		{
+			EnemyAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("IsInCombatRange"), bIsInCombatRange);
+		}
+	}
+}
+
+void AEnemy::OnCombatRangeSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (OtherActor == nullptr) return;
+
+	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
+	{
+		bIsInCombatRange = false;
+		if (EnemyAIController)
+		{
+			EnemyAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("IsInCombatRange"), bIsInCombatRange);
 		}
 	}
 }

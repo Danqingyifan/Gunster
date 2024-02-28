@@ -51,6 +51,7 @@ public:
 
 	//Camera
 	void LimitCameraView();
+
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UUserWidget> HUDOverlayClass;

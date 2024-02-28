@@ -11,7 +11,7 @@
 
 // Character play FiringAction animation According to this state enum
 UCLASS(config = Game)
-class AGunsterCharacter : public ACharacter,public IOnBulletHitInterface
+class AGunsterCharacter : public ACharacter, public IOnBulletHitInterface
 {
 	GENERATED_BODY()
 
@@ -26,7 +26,10 @@ public:
 	// Getter Segment
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowBossHealthBar(class AEnemy* Boss);
+	UFUNCTION(BlueprintImplementableEvent)
+	void HideBossHealthBar();
 private:
 	//Weapon Segment
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
@@ -62,7 +65,9 @@ private:
 	bool bIsReloading;
 
 	//Health
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float MaxHealth;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float Health;
 public:
 	// Basic Segment

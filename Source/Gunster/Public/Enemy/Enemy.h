@@ -26,6 +26,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "HitEffects")
 	class UParticleSystem* HitParticle;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Properties", meta = (AllowPrivateAccess = "true"))
+	FName EnemyName;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
 	float MaxHealth;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health")
@@ -41,6 +43,10 @@ protected:
 	void Die();
 	void PlayHitMontage(float PlayRate = 1.f);
 	void PlayDeathMontage(float PlayRate = 1.f);
+	UFUNCTION(BlueprintCallable)
+	void PlayCombatMontage(FName Section, float PlayRate = 1.f);
+	UFUNCTION(BlueprintPure)
+	FName GetCombatSection();
 
 	UFUNCTION(BlueprintCallable)
 	void StoreHitWidget(class UUserWidget* HitWidget, FVector HitLocation);
@@ -51,6 +57,13 @@ protected:
 
 	UFUNCTION()
 	void OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnAgroSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnCombatRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnCombatRangeSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -73,11 +86,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetDead(bool Dead);
 private:
-	FTimerHandle HealthBarTimer;
-	float HealthBarDisplayTime;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimInstance", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* BulletHitMontage;
+	FTimerHandle HealthBarTimer;
+	float HealthBarDisplayTime;
 	FTimerHandle HitReactTimer;
 	bool bCanReactToHit;
 	TMap<class UUserWidget*, FVector> HitAmountWidgetsMap;
@@ -92,13 +104,20 @@ private:
 	class AEnemyAIController* EnemyAIController;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AgroSphere", meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* AgroSphere;
-
+	class USphereComponent* AgroRangeSphere;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bIsStunned;
 	float StunProbability;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* CombatRangeSphere;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool bIsInCombatRange;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bIsDead;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimInstance", meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* CombatMontage;
 
 };
