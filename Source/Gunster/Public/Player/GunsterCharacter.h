@@ -26,10 +26,6 @@ public:
 	// Getter Segment
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
-	UFUNCTION(BlueprintImplementableEvent)
-	void ShowBossHealthBar(class AEnemy* Boss);
-	UFUNCTION(BlueprintImplementableEvent)
-	void HideBossHealthBar();
 private:
 	//Weapon Segment
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))

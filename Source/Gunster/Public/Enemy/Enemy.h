@@ -36,9 +36,13 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void ShowHealthBar();
 	void ShowHealthBar_Implementation();
-
 	UFUNCTION(BlueprintImplementableEvent)
 	void HideHealthBar();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowBossHealthBar();
+	UFUNCTION(BlueprintImplementableEvent)
+	void HideBossHealthBar();
 
 	void Die();
 	void PlayHitMontage(float PlayRate = 1.f);
@@ -103,6 +107,9 @@ private:
 
 	class AEnemyAIController* EnemyAIController;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool bIsDead;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AgroSphere", meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* AgroRangeSphere;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
@@ -113,11 +120,13 @@ private:
 	class USphereComponent* CombatRangeSphere;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool bIsInCombatRange;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	bool bIsDead;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimInstance", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* CombatMontage;
+
+	void SetWeaponCollisionSphere(USphereComponent* WeaponCollisionSphere, FName SocketName);
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* LeftWeaponCollisionSphere;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class USphereComponent* RightWeaponCollisionSphere;
 
 };

@@ -28,10 +28,12 @@ AEnemy::AEnemy()
 
 	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRangeSphere"));
 	CombatRangeSphere->SetupAttachment(GetRootComponent());
-	
+
+
+
 	//Orient to Movement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	bUseControllerRotationYaw = false; 
+	bUseControllerRotationYaw = false;
 	//Arrow Component is the real direction of the character facing
 	//Remenber to adjust the direction of the character to be identical to Arrow Component  in the blueprint
 }
@@ -42,7 +44,7 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 	Health = MaxHealth;
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	
+
 	//ignore camera
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	//BUG::Can't detect the GunsterCharacter after adding below
@@ -129,6 +131,16 @@ void AEnemy::SetDead(bool Dead)
 	}
 }
 
+void AEnemy::SetWeaponCollisionSphere(USphereComponent* WeaponCollisionSphere, FName SocketName)
+{
+	WeaponCollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("LeftWeaponCollisionSphere"));
+	WeaponCollisionSphere->SetupAttachment(GetMesh(), "LeftWeaponSocket");
+	WeaponCollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponCollisionSphere->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	WeaponCollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	WeaponCollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+}
+
 void AEnemy::ShowHealthBar_Implementation()
 {
 	if (Health > 0)
@@ -141,6 +153,7 @@ void AEnemy::ShowHealthBar_Implementation()
 void AEnemy::Die()
 {
 	HideHealthBar();
+	HideBossHealthBar();
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	PlayDeathMontage();
 	SetDead(true);
@@ -240,8 +253,8 @@ void AEnemy::OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	if (OtherActor == nullptr) return;
 
 	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
-	{	
-		Target->ShowBossHealthBar(this);
+	{
+		ShowBossHealthBar();
 		if (EnemyAIController)
 		{
 			EnemyAIController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Target);
@@ -251,10 +264,7 @@ void AEnemy::OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 
 void AEnemy::OnAgroSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
-	{
-		Target->HideBossHealthBar();
-	}
+	HideBossHealthBar();
 }
 
 void AEnemy::OnCombatRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
