@@ -41,7 +41,7 @@ protected:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowBossHealthBar();
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintCallable,BlueprintImplementableEvent)
 	void HideBossHealthBar();
 
 	void Die();
@@ -61,13 +61,14 @@ protected:
 
 	UFUNCTION()
 	void OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION()
-	void OnAgroSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void OnCombatRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 	UFUNCTION()
 	void OnCombatRangeSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnWeaponCollisionSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -89,6 +90,16 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SetDead(bool Dead);
+	UFUNCTION(BlueprintCallable)
+	void DeathFinish();
+
+	UFUNCTION(BlueprintCallable)
+	void ActivateCollision(class UBoxComponent* WeaponCollisionVolume);
+	UFUNCTION(BlueprintCallable)
+	void DeactivateCollision(class UBoxComponent* WeaponCollisionVolume);
+
+	UFUNCTION(BlueprintCallable)
+	void PlayAttackSound();
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimInstance", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* BulletHitMontage;
@@ -123,10 +134,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AnimInstance", meta = (AllowPrivateAccess = "true"))
 	class UAnimMontage* CombatMontage;
 
-	void SetWeaponCollisionSphere(USphereComponent* WeaponCollisionSphere, FName SocketName);
+	void SetWeaponCollisionVolume(class UBoxComponent* WeaponCollisionVolume);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* LeftWeaponCollisionVolume;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	class UBoxComponent* RightWeaponCollisionVolume;
+	float WeaponDamage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* LeftWeaponCollisionSphere;
+	class USoundCue* WeaponAttackSound;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	class USphereComponent* RightWeaponCollisionSphere;
-
+	class USoundCue* VocalAttackSound;
 };

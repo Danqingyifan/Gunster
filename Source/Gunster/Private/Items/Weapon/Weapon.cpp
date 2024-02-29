@@ -209,13 +209,13 @@ FHitResult AWeapon::TrackTrajectory()
 				{
 					if (FireHit.BoneName == "head")
 					{
-						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage * HeadShotMultiplier, WeaponOwner->GetController(), this, UDamageType::StaticClass());
+						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage * HeadShotMultiplier, WeaponOwner->GetController(), WeaponOwner, UDamageType::StaticClass());
 						Damage = BaseDamage * HeadShotMultiplier;
 						bIsHeadShot = true;
 					}
 					else
 					{
-						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage, WeaponOwner->GetController(), this, UDamageType::StaticClass());
+						UGameplayStatics::ApplyDamage(HitEnemy, BaseDamage, WeaponOwner->GetController(), WeaponOwner, UDamageType::StaticClass());
 						Damage = BaseDamage;
 						bIsHeadShot = false;
 					}

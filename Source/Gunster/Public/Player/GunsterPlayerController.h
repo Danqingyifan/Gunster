@@ -37,6 +37,8 @@ public:
 	class UInputAction* SprintAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ReloadAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	class UInputAction* SwitchWeaponAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
 	class AHUD* crossHair;
@@ -55,9 +57,9 @@ public:
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Widgets", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UUserWidget> HUDOverlayClass;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Widgets",meta = (AllowPrivateAccess="true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Widgets", meta = (AllowPrivateAccess = "true"))
 	UUserWidget* HUDOverlay;
-	
+
 	void DrawHUDOverlayToScreen();
 
 private:

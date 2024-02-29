@@ -13,12 +13,14 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
 
 // Sets default values
 AEnemy::AEnemy()
 	:MaxHealth(100.f), HealthBarDisplayTime(3.f), bCanReactToHit(true), bIsStunned(false),
-	StunProbability(0.2f), bIsDead(false), bIsInCombatRange(false)
+	StunProbability(0.2f), bIsInCombatRange(false), bIsDead(false), WeaponDamage(10.f)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -29,7 +31,13 @@ AEnemy::AEnemy()
 	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRangeSphere"));
 	CombatRangeSphere->SetupAttachment(GetRootComponent());
 
+	//SetWeaponCollisionVolume(LeftWeaponCollisionVolume, TEXT("LeftWeaponCollisionVolume"), TEXT("LeftWeaponCollisionSocket"));
+	//SetWeaponCollisionVolume(RightWeaponCollisionVolume, TEXT("RightWeaponCollisionVolume"), TEXT("RightWeaponCollisionSocket"));
 
+	LeftWeaponCollisionVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftWeaponCollisionVolume"));
+	LeftWeaponCollisionVolume->SetupAttachment(GetMesh(), TEXT("LeftWeaponCollisionSocket"));
+	RightWeaponCollisionVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("RightWeaponCollisionVolume"));
+	RightWeaponCollisionVolume->SetupAttachment(GetMesh(), TEXT("RightWeaponCollisionSocket"));
 
 	//Orient to Movement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -63,6 +71,11 @@ void AEnemy::BeginPlay()
 	AgroRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnAgroSphereOverlap);
 	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereOverlap);
 	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereEndOverlap);
+
+	SetWeaponCollisionVolume(LeftWeaponCollisionVolume);
+	SetWeaponCollisionVolume(RightWeaponCollisionVolume);
+	LeftWeaponCollisionVolume->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnWeaponCollisionSphereOverlap);
+	RightWeaponCollisionVolume->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnWeaponCollisionSphereOverlap);
 }
 
 // Called every frame
@@ -89,7 +102,6 @@ void AEnemy::OnBulletHit_Implementation(FHitResult HitResult)
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticle, HitResult.Location, FRotator(0), true);
 	}
 	ShowHealthBar();
-
 	// determine if be Stunned
 	if (FMath::FRandRange(0.f, 1.f) <= StunProbability)
 	{
@@ -101,6 +113,12 @@ void AEnemy::OnBulletHit_Implementation(FHitResult HitResult)
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (EnemyAIController)
+	{
+		EnemyAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+	}
+
 	if (Health - DamageAmount <= 0)
 	{
 		Health = 0;
@@ -122,6 +140,14 @@ void AEnemy::SetStunned(bool Stunned)
 	}
 }
 
+void AEnemy::Die()
+{
+	HideHealthBar();
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	PlayDeathMontage();
+	SetDead(true);
+}
 void AEnemy::SetDead(bool Dead)
 {
 	bIsDead = Dead;
@@ -130,15 +156,39 @@ void AEnemy::SetDead(bool Dead)
 		EnemyAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("IsDead"), bIsDead);
 	}
 }
-
-void AEnemy::SetWeaponCollisionSphere(USphereComponent* WeaponCollisionSphere, FName SocketName)
+void AEnemy::DeathFinish()
 {
-	WeaponCollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("LeftWeaponCollisionSphere"));
-	WeaponCollisionSphere->SetupAttachment(GetMesh(), "LeftWeaponSocket");
-	WeaponCollisionSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	WeaponCollisionSphere->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
-	WeaponCollisionSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	WeaponCollisionSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	HideBossHealthBar();
+	GetMesh()->bPauseAnims = true;
+	FTimerHandle DeathTimer;
+	GetWorld()->GetTimerManager().SetTimer(DeathTimer, ([this]() { Destroy(); }), 2.f, false);
+}
+
+
+void AEnemy::ActivateCollision(class UBoxComponent* WeaponCollisionVolume)
+{
+	WeaponCollisionVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void AEnemy::DeactivateCollision(class UBoxComponent* WeaponCollisionVolume)
+{
+	WeaponCollisionVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void AEnemy::PlayAttackSound()
+{
+	if (WeaponAttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, WeaponAttackSound, GetActorLocation());
+	}
+}
+
+void AEnemy::SetWeaponCollisionVolume(class UBoxComponent* WeaponCollisionVolume)
+{
+	WeaponCollisionVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	WeaponCollisionVolume->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	WeaponCollisionVolume->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	WeaponCollisionVolume->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 }
 
 void AEnemy::ShowHealthBar_Implementation()
@@ -150,14 +200,6 @@ void AEnemy::ShowHealthBar_Implementation()
 	}
 }
 
-void AEnemy::Die()
-{
-	HideHealthBar();
-	HideBossHealthBar();
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	PlayDeathMontage();
-	SetDead(true);
-}
 
 void AEnemy::PlayHitMontage(float PlayRate /*= 1.f*/)
 {
@@ -262,10 +304,7 @@ void AEnemy::OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 }
 
-void AEnemy::OnAgroSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	HideBossHealthBar();
-}
+
 
 void AEnemy::OnCombatRangeSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -292,6 +331,18 @@ void AEnemy::OnCombatRangeSphereEndOverlap(UPrimitiveComponent* OverlappedCompon
 		{
 			EnemyAIController->GetBlackboardComponent()->SetValueAsBool(TEXT("IsInCombatRange"), bIsInCombatRange);
 		}
+	}
+}
+
+void AEnemy::OnWeaponCollisionSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (auto GunsterCharacter = Cast<AGunsterCharacter>(OtherActor))
+	{
+		if (GunsterCharacter->GetMeleeImpactSound())
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, GunsterCharacter->GetMeleeImpactSound(), GetActorLocation());
+		}
+		UGameplayStatics::ApplyDamage(GunsterCharacter, WeaponDamage, EnemyAIController, this, UDamageType::StaticClass());
 	}
 }
 

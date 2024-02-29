@@ -65,6 +65,9 @@ private:
 	float MaxHealth;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float Health;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	class USoundCue* MeleeImpactSound;
 public:
 	// Basic Segment
 	void Move(const FInputActionValue& Value);
@@ -75,7 +78,9 @@ public:
 	void Dodge();
 	void Sprint();
 	void Dash();
-
+	UFUNCTION(BlueprintNativeEvent)
+	void SwitchWeapon();
+	void FinishSwitchWeapon();
 	//Weapon Segment
 	void Aim();
 	void StopAim();
@@ -87,7 +92,7 @@ public:
 	void ZoomIfAim(bool isAiming, float DeltaTime);
 	void ZoomCamera(float TargetFOV, float DeltaTime);
 
-	//Init Part
+	void Die();
 private:
 	//Constructor
 	void SetUpControllerRotation();
@@ -106,6 +111,8 @@ private:
 public:
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 	FORCEINLINE bool GetIsShooting() const { return bIsShooting; }
+	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
 	void OnBulletHit_Implementation(FHitResult HitResult) override;
+	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 };
 

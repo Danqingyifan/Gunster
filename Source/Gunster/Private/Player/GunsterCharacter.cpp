@@ -4,7 +4,6 @@
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
 #include "Items/Weapon/Weapon.h"
-
 //Camera
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -17,6 +16,7 @@
 #include "GameFramework/Pawn.h"
 #include "EnhancedInputComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/GameplayStatics.h"
 
 AGunsterCharacter::AGunsterCharacter()
 	:bIsAiming(false), bIsShooting(false), bIsReloading(false), IdleFOV(100.f), AimFOV(50.f), MaxHealth(100)
@@ -135,6 +135,8 @@ void AGunsterCharacter::SetUpInput(UInputComponent* PlayerInputComponent)
 
 			EnhancedInputComponent->BindAction(GunsterController->ReloadAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Reload);
 
+			EnhancedInputComponent->BindAction(GunsterController->SwitchWeaponAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::SwitchWeapon);
+			EnhancedInputComponent->BindAction(GunsterController->SwitchWeaponAction, ETriggerEvent::Completed, this, &AGunsterCharacter::FinishSwitchWeapon);
 		}
 	}
 }
@@ -260,8 +262,6 @@ void AGunsterCharacter::ZoomCamera(float TargetFOV, float DeltaTime)
 	}
 }
 
-
-
 void AGunsterCharacter::Dodge()
 {
 
@@ -273,6 +273,16 @@ void AGunsterCharacter::Sprint()
 }
 
 void AGunsterCharacter::Dash()
+{
+
+}
+
+void AGunsterCharacter::SwitchWeapon()
+{
+	
+}
+
+void AGunsterCharacter::FinishSwitchWeapon()
 {
 
 }
@@ -302,8 +312,27 @@ void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket*
 	}
 }
 
+float AGunsterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	if (Health - DamageAmount <= 0)
+	{
+		Health = 0;
+		Die();
+	}
+	else
+	{
+		Health -= DamageAmount;
+	}
+	return DamageAmount;
+}
+
 void AGunsterCharacter::OnBulletHit_Implementation(FHitResult HitResult)
 {
 
 }
 
+void AGunsterCharacter::Die()
+{
+
+}
