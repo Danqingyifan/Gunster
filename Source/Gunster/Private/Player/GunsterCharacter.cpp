@@ -16,6 +16,7 @@
 #include "GameFramework/Pawn.h"
 #include "EnhancedInputComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
+
 #include "Kismet/GameplayStatics.h"
 
 AGunsterCharacter::AGunsterCharacter()
@@ -34,6 +35,12 @@ void AGunsterCharacter::BeginPlay()
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	//Set up the controller
+	if (AGunsterPlayerController* GunsterController = Cast<AGunsterPlayerController>(Controller))
+	{
+		GunsterPlayerController = GunsterController;
+	}
 }
 
 void AGunsterCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
@@ -94,7 +101,7 @@ void AGunsterCharacter::SetUpCharacterMovement()
 //BeginPlay
 void AGunsterCharacter::SpawnDefaultWeapon()
 {
-	const USkeletalMeshSocket* RightHandSocket = GetMesh()->GetSocketByName("hand_rSocket");
+	const USkeletalMeshSocket* RightHandSocket = GetMesh()->GetSocketByName("hand_lSocket");
 	// Spawn the default weapon(Dual_SMG) at the location of the hand socket
 
 	if (DefaultWeaponClass && RightHandSocket)
@@ -202,11 +209,14 @@ void AGunsterCharacter::Reload()
 	if (EquippedWeapon)
 	{
 		AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && ReloadMontage && EquippedWeapon->GetCanReload())
+		if (AnimInstance && ReloadMontage)
+		{
+			AnimInstance->Montage_Play(ReloadMontage);
+			AnimInstance->Montage_JumpToSection(FName("ReloadSMG"));
+		}
+		if (EquippedWeapon->GetCanReload())
 		{
 			EquippedWeapon->ReloadMagazine();
-			AnimInstance->Montage_Play(ReloadMontage);
-			AnimInstance->Montage_JumpToSection(FName("Reload SMG"));
 		}
 	}
 }
@@ -279,9 +289,8 @@ void AGunsterCharacter::Dash()
 
 void AGunsterCharacter::SwitchWeapon()
 {
-	
-}
 
+}
 void AGunsterCharacter::FinishSwitchWeapon()
 {
 
@@ -334,5 +343,15 @@ void AGunsterCharacter::OnBulletHit_Implementation(FHitResult HitResult)
 
 void AGunsterCharacter::Die()
 {
+	if (auto AnimationInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimationInstance->Montage_Play(DeathMontage);
+		AnimationInstance->Montage_JumpToSection(FName("Death"));
+		DisableInput(GunsterPlayerController);
+	}
+}
 
+void AGunsterCharacter::DeathFinish()
+{
+	GetMesh()->bPauseAnims = true;
 }

@@ -33,6 +33,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
 	class AWeapon* EquippedWeapon;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
+	class AGunsterPlayerController* GunsterPlayerController;
 
 	//Montage Segment
 	class UAnimInstance* AnimInstance;
@@ -51,7 +53,7 @@ private:
 	float IdleFOV;
 	float AimFOV;
 
-private:
+public:
 	//FireState
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "FireState", meta = (AllowPrivateAccess = "true"))
 	bool bIsAiming;
@@ -65,7 +67,8 @@ private:
 	float MaxHealth;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float Health;
-
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
+	class UAnimMontage* DeathMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	class USoundCue* MeleeImpactSound;
 public:
@@ -78,7 +81,6 @@ public:
 	void Dodge();
 	void Sprint();
 	void Dash();
-	UFUNCTION(BlueprintNativeEvent)
 	void SwitchWeapon();
 	void FinishSwitchWeapon();
 	//Weapon Segment
@@ -93,6 +95,8 @@ public:
 	void ZoomCamera(float TargetFOV, float DeltaTime);
 
 	void Die();
+	UFUNCTION(BlueprintCallable)
+	void DeathFinish();
 private:
 	//Constructor
 	void SetUpControllerRotation();

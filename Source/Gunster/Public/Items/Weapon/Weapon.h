@@ -154,6 +154,7 @@ private:
 	FHitResult TrackTrajectory();
 
 private:
+	class AGunsterCharacter* WeaponOwner;
 	//for weapon firing
 	bool bShouldFire;  //When Player Triggering is True
 	bool bCanFire;	//When Gun is Ready to Fire is True

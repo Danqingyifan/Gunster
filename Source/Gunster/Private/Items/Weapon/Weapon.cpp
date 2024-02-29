@@ -41,6 +41,7 @@ void AWeapon::BeginPlay()
 	Super::BeginPlay();
 	WeaponAmmo = ClipCapacity;
 	FireState = EFireState::ECS_Unoccupied;
+	WeaponOwner = Cast<AGunsterCharacter>(GetOwner());
 }
 
 void AWeapon::Tick(float DeltaTime)
@@ -154,8 +155,11 @@ void AWeapon::Fire()
 		}
 		else
 		{
-			AGunsterCharacter* WeaponOwner = Cast<AGunsterCharacter>(GetOwner());
-			WeaponOwner->Reload();
+			WeaponOwner = Cast<AGunsterCharacter>(GetOwner());
+			if (WeaponOwner)
+			{
+				WeaponOwner->Reload();
+			}
 			PlayOutOfAmmoSound();
 		}
 	}
@@ -205,7 +209,8 @@ FHitResult AWeapon::TrackTrajectory()
 			{
 				float Damage;
 				bool bIsHeadShot;
-				if (auto WeaponOwner = Cast<AGunsterCharacter>(GetOwner()))
+				WeaponOwner = Cast<AGunsterCharacter>(GetOwner());
+				if (WeaponOwner)
 				{
 					if (FireHit.BoneName == "head")
 					{
@@ -239,6 +244,11 @@ void AWeapon::ReloadMagazine()
 	{
 		bCanFire = false;
 		FireState = EFireState::ECS_Reloading;
+		WeaponOwner = Cast<AGunsterCharacter>(GetOwner());
+		if (WeaponOwner)
+		{
+			WeaponOwner->bIsReloading = true;
+		}
 
 		GetWorld()->GetTimerManager().SetTimer
 		(
@@ -246,7 +256,10 @@ void AWeapon::ReloadMagazine()
 			([this]() {
 				bCanFire = true;
 				FireState = EFireState::ECS_Unoccupied;
-
+				if (WeaponOwner = Cast<AGunsterCharacter>(GetOwner()))
+				{
+					WeaponOwner->bIsReloading = false;
+				}
 				if (StartingAmmo >= (ClipCapacity - WeaponAmmo))
 				{
 					StartingAmmo -= (ClipCapacity - WeaponAmmo);

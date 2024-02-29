@@ -20,7 +20,7 @@
 // Sets default values
 AEnemy::AEnemy()
 	:MaxHealth(100.f), HealthBarDisplayTime(3.f), bCanReactToHit(true), bIsStunned(false),
-	StunProbability(0.2f), bIsInCombatRange(false), bIsDead(false), WeaponDamage(10.f)
+	StunProbability(0.2f), bIsInCombatRange(false), bIsDead(false), WeaponDamage(50.f)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
