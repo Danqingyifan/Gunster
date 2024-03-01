@@ -103,10 +103,13 @@ void AEnemy::OnBulletHit_Implementation(FHitResult HitResult)
 	}
 	ShowHealthBar();
 	// determine if be Stunned
-	if (FMath::FRandRange(0.f, 1.f) <= StunProbability)
+	if (HitResult.BoneName == "head")
 	{
-		SetStunned(true);
-		PlayHitMontage();
+		if (FMath::FRandRange(0.f, 1.f) <= StunProbability)
+		{
+			SetStunned(true);
+			PlayHitMontage();
+		}
 	}
 }
 
@@ -142,11 +145,12 @@ void AEnemy::SetStunned(bool Stunned)
 
 void AEnemy::Die()
 {
+	SetDead(true);
+
 	HideHealthBar();
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
 	PlayDeathMontage();
-	SetDead(true);
+
 }
 void AEnemy::SetDead(bool Dead)
 {

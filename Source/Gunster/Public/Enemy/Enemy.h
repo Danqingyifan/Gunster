@@ -139,6 +139,7 @@ private:
 	class UBoxComponent* LeftWeaponCollisionVolume;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class UBoxComponent* RightWeaponCollisionVolume;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float WeaponDamage;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	class USoundCue* WeaponAttackSound;

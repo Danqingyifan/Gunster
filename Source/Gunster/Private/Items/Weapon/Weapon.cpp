@@ -120,8 +120,9 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			ReloadTime = WeaponDataRow->ReloadTime;
 			BaseDamage = WeaponDataRow->BaseDamage;
 			HeadShotMultiplier = WeaponDataRow->HeadShotMultiplier;
-
-			SetFireSound(WeaponDataRow->FireSound);
+			WeaponIcon = WeaponDataRow->WeaponIcon;
+			AmmoTypeIcon = WeaponDataRow->AmmoTypeIcon;
+			SetFireSound(WeaponDataRow->FireSound); 
 			SetSmokeTrail(WeaponDataRow->SmokeTrail);
 			SetWeaponMesh(WeaponDataRow->WeaponMesh);
 		}

@@ -4,10 +4,10 @@
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
 #include "Items/Weapon/Weapon.h"
+#include "Enemy/EnemyAIController.h"
 //Camera
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-
 // Character
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
@@ -16,7 +16,7 @@
 #include "GameFramework/Pawn.h"
 #include "EnhancedInputComponent.h"
 #include "Engine/SkeletalMeshSocket.h"
-
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 AGunsterCharacter::AGunsterCharacter()
@@ -208,14 +208,14 @@ void AGunsterCharacter::Reload()
 {
 	if (EquippedWeapon)
 	{
-		AnimInstance = GetMesh()->GetAnimInstance();
-		if (AnimInstance && ReloadMontage)
-		{
-			AnimInstance->Montage_Play(ReloadMontage);
-			AnimInstance->Montage_JumpToSection(FName("ReloadSMG"));
-		}
 		if (EquippedWeapon->GetCanReload())
 		{
+			AnimInstance = GetMesh()->GetAnimInstance();
+			if (AnimInstance && ReloadMontage)
+			{
+				AnimInstance->Montage_Play(ReloadMontage);
+				AnimInstance->Montage_JumpToSection(FName("ReloadSMG"));
+			}
 			EquippedWeapon->ReloadMagazine();
 		}
 	}
@@ -316,6 +316,7 @@ void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket*
 	{
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket->SocketName);
 		Weapon->SetOwner(this);
+		EquippedWeapon = Weapon;
 		//ignore the collision of HoldingWeapon against the Character
 		Weapon->SetActorEnableCollision(false);
 	}
@@ -328,6 +329,10 @@ float AGunsterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	{
 		Health = 0;
 		Die();
+		if (auto EnemyController = Cast<AEnemyAIController>(EventInstigator))
+		{
+			EnemyController->GetBlackboardComponent()->SetValueAsBool("IsTargetDead", true);
+		}
 	}
 	else
 	{
@@ -343,11 +348,17 @@ void AGunsterCharacter::OnBulletHit_Implementation(FHitResult HitResult)
 
 void AGunsterCharacter::Die()
 {
+	DisableInput(GunsterPlayerController);
+	if (bIsAiming)
+	{
+		bIsAiming = false;
+	}
 	if (auto AnimationInstance = GetMesh()->GetAnimInstance())
 	{
 		AnimationInstance->Montage_Play(DeathMontage);
+		//PlayRate need to be set after Montage_Play
+		AnimationInstance->Montage_SetPlayRate(DeathMontage, 0.8f);
 		AnimationInstance->Montage_JumpToSection(FName("Death"));
-		DisableInput(GunsterPlayerController);
 	}
 }
 
