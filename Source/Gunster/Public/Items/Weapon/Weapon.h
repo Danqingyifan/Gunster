@@ -23,6 +23,7 @@ enum class EFireState : uint8
 UENUM(BlueprintType)
 enum class EWeaponType : uint8
 {
+	EWT_Base UMETA(DisplayName = "Base"),
 	EWT_Pistol UMETA(DisplayName = "Pistol"),
 	EWT_Shotgun UMETA(DisplayName = "Shotgun"),
 	EWT_SMG UMETA(DisplayName = "SMG"),
@@ -208,6 +209,7 @@ public:
 	FORCEINLINE void SetWeaponMesh(UStaticMesh* Mesh) { WeaponMesh->SetStaticMesh(Mesh); }
 	FORCEINLINE bool GetCanReload() const { return StartingAmmo > 0 && WeaponAmmo < ClipCapacity && FireState != EFireState::ECS_Reloading; }
 	FORCEINLINE bool GetCanFire() const { return bCanFire; }
+	FORCEINLINE class UStaticMesh* GetWeaponMesh() const { return WeaponMesh->GetStaticMesh(); }
 private:
 	void SetUpWeaponProperties(EWeaponState State);
 };

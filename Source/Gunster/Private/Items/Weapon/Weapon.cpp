@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#pragma once
+#include "../Gunster.h"
 #include "Items/Weapon/Weapon.h"
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
@@ -181,7 +182,7 @@ FHitResult AWeapon::TrackTrajectory()
 	FHitResult CrossHairTrace;
 	FVector CrossHairStart{ CrossHairWorldPosition };
 	FVector CrossHairEnd{ CrossHairStart + CrossHairWorldDirection * 3'000 };
-	GetWorld()->LineTraceSingleByChannel(CrossHairTrace, CrossHairStart, CrossHairEnd, ECollisionChannel::ECC_Visibility);
+	GetWorld()->LineTraceSingleByChannel(CrossHairTrace, CrossHairStart, CrossHairEnd, ECC_PlayerWeaponChannel);
 	if (CrossHairTrace.bBlockingHit)
 	{
 		CrossHairEnd = CrossHairTrace.ImpactPoint;
@@ -192,7 +193,7 @@ FHitResult AWeapon::TrackTrajectory()
 	FVector BarrelEnd{ CrossHairEnd + (CrossHairTrace.ImpactPoint - BarrelStart).GetSafeNormal() * 10.f };
 	// Need one extra forward vector to make sure the bullet will hit the target
 
-	GetWorld()->LineTraceSingleByChannel(BarrelTrace, BarrelStart, BarrelEnd, ECollisionChannel::ECC_Visibility);
+	GetWorld()->LineTraceSingleByChannel(BarrelTrace, BarrelStart, BarrelEnd, ECC_PlayerWeaponChannel);
 
 	FHitResult FireHit{ BarrelTrace };
 

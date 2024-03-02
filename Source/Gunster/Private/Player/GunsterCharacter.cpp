@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 //MyClass
+#include "../Gunster.h"
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
 #include "Items/Weapon/Weapon.h"
@@ -316,6 +317,7 @@ void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket*
 	{
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, Socket->SocketName);
 		Weapon->SetOwner(this);
+		//Set weapon mesh's object type
 		EquippedWeapon = Weapon;
 		//ignore the collision of HoldingWeapon against the Character
 		Weapon->SetActorEnableCollision(false);
