@@ -1,4 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+#include "../Gunster.h"
 #include "Enemy/Enemy.h"
 #include "Enemy/EnemyAIController.h"
 #include "Player/GunsterCharacter.h"
@@ -192,7 +193,7 @@ void AEnemy::SetWeaponCollisionVolume(class UBoxComponent* WeaponCollisionVolume
 	WeaponCollisionVolume->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponCollisionVolume->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	WeaponCollisionVolume->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	WeaponCollisionVolume->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	WeaponCollisionVolume->SetCollisionResponseToChannel(ECC_Player, ECollisionResponse::ECR_Overlap);
 }
 
 void AEnemy::ShowHealthBar_Implementation()
