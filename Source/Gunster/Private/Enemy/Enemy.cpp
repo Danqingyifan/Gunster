@@ -126,7 +126,11 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 	if (Health - DamageAmount <= 0)
 	{
 		Health = 0;
-		Die();
+		if (!bIsDead)
+		{
+			SetDead(true);
+			Die();
+		}
 	}
 	else
 	{
@@ -146,12 +150,10 @@ void AEnemy::SetStunned(bool Stunned)
 
 void AEnemy::Die()
 {
-	SetDead(true);
-
 	HideHealthBar();
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerWeaponChannel, ECollisionResponse::ECR_Ignore);
 	PlayDeathMontage();
-
 }
 void AEnemy::SetDead(bool Dead)
 {
