@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "OnBulletHitInterface.h"
+#include "Interfaces/OnBulletHitInterface.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -35,6 +35,10 @@ private:
 	class AWeapon* EquippedWeapon;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
 	class AGunsterPlayerController* GunsterPlayerController;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact", meta = (AllowPrivateAccess = "true"))
+	class UInteractableComponent* InteractableComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
+	class UCharacterAttributesComponent* CharacterAttributesComponent;
 
 	//Montage Segment
 	class UAnimInstance* AnimInstance;
@@ -45,7 +49,7 @@ private:
 
 private:
 	//Camera Segment
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
@@ -63,6 +67,7 @@ public:
 	bool bIsReloading;
 
 	//Health
+	// TODO : Move the Attributes to One Character Attribute Component
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	float MaxHealth;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
@@ -77,6 +82,7 @@ public:
 	void Look(const FInputActionValue& Value);
 
 	//Action Segment
+	void Interact();
 	void AimLocomotion(bool isAiming);
 	void Dodge();
 	void Sprint();
@@ -111,12 +117,17 @@ private:
 private:
 	class AWeapon* SpawnWeapon(const class USkeletalMeshSocket* Socket, const TSubclassOf<class AWeapon> WeaponClass);
 	void AttachWeapon(class AWeapon* Weapon, const class USkeletalMeshSocket* Socket);
-
 public:
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 	FORCEINLINE bool GetIsShooting() const { return bIsShooting; }
-	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
-	void OnBulletHit_Implementation(FHitResult HitResult) override;
+	FORCEINLINE class USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
+	void OnBulletHit_Implementation(const FHitResult& HitResult) override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+public:
+	UFUNCTION(Server, Unreliable, WithValidation,BlueprintCallable)
+	void ServerRPCSpawnBox(int arg);
+	UPROPERTY(EditAnywhere)
+	class UStaticMesh* BoxMesh;
 };
 

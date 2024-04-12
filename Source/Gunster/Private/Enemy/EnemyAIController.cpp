@@ -13,7 +13,16 @@ AEnemyAIController::AEnemyAIController()
 	check(BlackboardComponent);
 	BehaviorTreeComponent = CreateDefaultSubobject<UBehaviorTreeComponent>(TEXT("BehaviorTreeComponent"));
 	check(BehaviorTreeComponent);
-	
+}
+
+void AEnemyAIController::BeginPlay()
+{
+	Super::BeginPlay();
+	if(ensureMsgf(BehaviorTree, TEXT("Nullptr! Behavior Tree is not assigned")))
+	{
+		RunBehaviorTree(BehaviorTree);
+	}
+
 }
 
 void AEnemyAIController::OnPossess(APawn* InPawn)

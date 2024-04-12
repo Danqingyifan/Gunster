@@ -39,9 +39,15 @@ public:
 	class UInputAction* ReloadAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	class UInputAction* SwitchWeaponAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InteractAction;
 
+
+	// TODO:Remove this,then use Weapon's CrossHair
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
-	class AHUD* crossHair;
+	class AHUD* CrossHair;
+
+
 public:
 	//CrossHair
 	UFUNCTION(BlueprintCallable, Category = "CrossHair")
@@ -64,8 +70,9 @@ private:
 
 private:
 	//CrossHair
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
 	float CrossHairSpreadBase;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "CrossHair", meta = (AllowPrivateAccess = "true"))
 	float CrossHairSpreadMultiplier;
 
 	float CrossHairVelocityFactor;

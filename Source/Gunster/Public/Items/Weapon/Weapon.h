@@ -3,9 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Items/Item.h"
 #include "GameFramework/Actor.h"
 #include "Engine/DataTable.h"
-#include "OnBulletHitInterface.h"
+
 #include "Weapon.generated.h"
 
 //FireState
@@ -92,7 +93,7 @@ enum class EWeaponState : uint8
 };
 
 UCLASS()
-class GUNSTER_API AWeapon : public AActor
+class GUNSTER_API AWeapon : public AItem
 {
 	GENERATED_BODY()
 

@@ -16,7 +16,12 @@ class GUNSTER_API AEnemyAIController : public AAIController
 public:
 	AEnemyAIController();
 
+	protected:
+	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
+
+	UPROPERTY(EditDefaultsOnly,BlueprintReadWrite,Category = "AI",meta = (AllowPrivateAccess = "true"))
+	class UBehaviorTree* BehaviorTree;
 
 	UPROPERTY(BlueprintReadWrite, Category = "AI", meta = (AllowPrivateAccess = "true"))
 	class UBlackboardComponent* BlackboardComponent;

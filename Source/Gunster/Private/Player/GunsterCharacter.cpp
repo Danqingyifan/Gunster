@@ -1,11 +1,13 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 //MyClass
-#include "../Gunster.h"
 #include "Player/GunsterCharacter.h"
+#include "../Gunster.h"
 #include "Player/GunsterPlayerController.h"
 #include "Items/Weapon/Weapon.h"
 #include "Enemy/EnemyAIController.h"
+#include "InteractableComponent.h"
+#include "CharacterAttributesComponent.h"
 //Camera
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -19,6 +21,9 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Engine/StaticMeshActor.h"
+//Net
+#include "Net/UnrealNetwork.h"
 
 AGunsterCharacter::AGunsterCharacter()
 	:bIsAiming(false), bIsShooting(false), bIsReloading(false), IdleFOV(100.f), AimFOV(50.f), MaxHealth(100)
@@ -26,6 +31,12 @@ AGunsterCharacter::AGunsterCharacter()
 	SetUpCamera();
 	SetUpControllerRotation();
 	SetUpCharacterMovement();
+
+	InteractableComponent = CreateDefaultSubobject<UInteractableComponent>(TEXT("InteractableComponent"));
+	CharacterAttributesComponent = CreateDefaultSubobject<UCharacterAttributesComponent>(TEXT("CharacterAttributesComponent"));
+	
+	SetReplicates(true);
+	SetReplicateMovement(true);
 }
 
 void AGunsterCharacter::BeginPlay()
@@ -142,6 +153,8 @@ void AGunsterCharacter::SetUpInput(UInputComponent* PlayerInputComponent)
 			EnhancedInputComponent->BindAction(GunsterController->SprintAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Sprint);
 
 			EnhancedInputComponent->BindAction(GunsterController->ReloadAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Reload);
+
+			EnhancedInputComponent->BindAction(GunsterController->InteractAction, ETriggerEvent::Started, this, &AGunsterCharacter::Interact);
 
 			EnhancedInputComponent->BindAction(GunsterController->SwitchWeaponAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::SwitchWeapon);
 			EnhancedInputComponent->BindAction(GunsterController->SwitchWeaponAction, ETriggerEvent::Completed, this, &AGunsterCharacter::FinishSwitchWeapon);
@@ -287,6 +300,13 @@ void AGunsterCharacter::Dash()
 {
 
 }
+void AGunsterCharacter::Interact()
+{
+	if (InteractableComponent)
+	{
+		InteractableComponent->InteractWith();
+	}
+}
 
 void AGunsterCharacter::SwitchWeapon()
 {
@@ -302,11 +322,16 @@ class AWeapon* AGunsterCharacter::SpawnWeapon(const USkeletalMeshSocket* Socket,
 {
 	if (Socket)
 	{
-		FActorSpawnParameters SpawnInfo;
+		FActorSpawnParameters SpawnParams;
+
+		//Saved for later use
+		//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		//SpawnParams.Instigator = this;
+
 		FTransform LeftSocketTransform = GetMesh()->GetSocketTransform(Socket->SocketName);
 		FVector SpawnLocation = LeftSocketTransform.GetLocation();
 		FRotator SpawnRotation = LeftSocketTransform.GetRotation().Rotator();
-		return GetWorld()->SpawnActor<AWeapon>(WeaponClass, SpawnLocation, SpawnRotation, SpawnInfo);
+		return GetWorld()->SpawnActor<AWeapon>(WeaponClass, SpawnLocation, SpawnRotation, SpawnParams);
 	}
 	return nullptr;
 }
@@ -327,6 +352,7 @@ void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket*
 float AGunsterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	CharacterAttributesComponent->ApplyHealthChange(-DamageAmount);
 	if (Health - DamageAmount <= 0)
 	{
 		Health = 0;
@@ -343,7 +369,46 @@ float AGunsterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	return DamageAmount;
 }
 
-void AGunsterCharacter::OnBulletHit_Implementation(FHitResult HitResult)
+//execuate before the implementation of the function
+//if true,will exe the implementation
+//if false,the client will call the function will be disconnected from the server
+bool AGunsterCharacter::ServerRPCSpawnBox_Validate(int arg)
+{
+	if (arg > 100)
+		return false;
+	else 
+		return true;
+}
+
+void AGunsterCharacter::ServerRPCSpawnBox_Implementation(int arg)
+{ 
+	if (HasAuthority())
+	{
+		if (!BoxMesh)
+		{
+			return;
+		}
+		AStaticMeshActor* StaticMeshActor = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass());
+		if (StaticMeshActor)
+		{
+			//set replicate
+			StaticMeshActor->SetReplicates(true);
+			StaticMeshActor->SetReplicateMovement(true);
+			StaticMeshActor->SetMobility(EComponentMobility::Movable);
+
+			StaticMeshActor->SetActorLocation(GetActorLocation() + FVector(0, 0, 100));
+
+			StaticMeshActor->GetStaticMeshComponent()->SetStaticMesh(BoxMesh);
+			StaticMeshActor->GetStaticMeshComponent()->SetIsReplicated(true);
+			StaticMeshActor->GetStaticMeshComponent()->SetSimulatePhysics(true);
+		}
+	}
+
+}
+
+
+
+void AGunsterCharacter::OnBulletHit_Implementation(const FHitResult& HitResult)
 {
 
 }
@@ -361,6 +426,8 @@ void AGunsterCharacter::Die()
 		//PlayRate need to be set after Montage_Play
 		AnimationInstance->Montage_SetPlayRate(DeathMontage, 0.8f);
 		AnimationInstance->Montage_JumpToSection(FName("Death"));
+
+		SetLifeSpan(5.f);
 	}
 }
 

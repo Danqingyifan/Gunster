@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-#include "../Gunster.h"
 #include "Enemy/Enemy.h"
+
+#include "../Gunster.h"
 #include "Enemy/EnemyAIController.h"
 #include "Player/GunsterCharacter.h"
 
@@ -16,6 +17,10 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Perception/PawnSensingComponent.h"
+#include "AIController.h"
+#include "BrainComponent.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -45,15 +50,38 @@ AEnemy::AEnemy()
 	bUseControllerRotationYaw = false;
 	//Arrow Component is the real direction of the character facing
 	//Remenber to adjust the direction of the character to be identical to Arrow Component  in the blueprint
+
+	PawnSensingComponent = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSensingComponent"));
+
+	//Make the AI Controller can possess the dynamically spawned enemy
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+}
+
+void AEnemy::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	//delegate
+	// Function Binded must be UFUNCTION, otherwise, it will not be called
+	// better than put in beginplay,it run before beginplay
+	AgroRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnAgroSphereOverlap);
+	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereOverlap);
+	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereEndOverlap);
+	LeftWeaponCollisionVolume->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnWeaponCollisionSphereOverlap);
+	RightWeaponCollisionVolume->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnWeaponCollisionSphereOverlap);
+
+	//AI
+	PawnSensingComponent->OnSeePawn.AddDynamic(this, &AEnemy::OnSeePawn);
+
 }
 
 // Called when the game starts or when spawned
 void AEnemy::BeginPlay()
-{
+{	
 	Super::BeginPlay();
 	Health = MaxHealth;
+	
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-
 	//ignore camera
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	//BUG::Can't detect the GunsterCharacter after adding below
@@ -67,16 +95,8 @@ void AEnemy::BeginPlay()
 		EnemyAIController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
 		EnemyAIController->RunBehaviorTree(BehaviorTree);
 	}
-
-	// Function Binded must be UFUNCTION, otherwise, it will not be called
-	AgroRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnAgroSphereOverlap);
-	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereOverlap);
-	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::OnCombatRangeSphereEndOverlap);
-
 	SetWeaponCollisionVolume(LeftWeaponCollisionVolume);
 	SetWeaponCollisionVolume(RightWeaponCollisionVolume);
-	LeftWeaponCollisionVolume->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnWeaponCollisionSphereOverlap);
-	RightWeaponCollisionVolume->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::OnWeaponCollisionSphereOverlap);
 }
 
 // Called every frame
@@ -89,10 +109,11 @@ void AEnemy::Tick(float DeltaTime)
 // Called to bind functionality to input
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
+
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void AEnemy::OnBulletHit_Implementation(FHitResult HitResult)
+void AEnemy::OnBulletHit_Implementation(const FHitResult& HitResult)
 {
 	if (HitSound)
 	{
@@ -150,10 +171,27 @@ void AEnemy::SetStunned(bool Stunned)
 
 void AEnemy::Die()
 {
+	AAIController* AIController = Cast<AAIController>(GetController());
+	if (AIController)
+	{
+		AIController->GetBrainComponent()->StopLogic("Dead");
+	}
 	HideHealthBar();
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionResponseToChannel(ECC_PlayerWeaponChannel, ECollisionResponse::ECR_Ignore);
+	
+
+	//Two Ways to play death animation
+	
+	//Use Montage
+	
 	PlayDeathMontage();
+
+	//Use Ragdoll
+	
+	//GetMesh()->SetAllBodiesSimulatePhysics(true);
+	//GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+
 }
 void AEnemy::SetDead(bool Dead)
 {
@@ -188,6 +226,14 @@ void AEnemy::PlayAttackSound()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, WeaponAttackSound, GetActorLocation());
 	}
+}
+
+void AEnemy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(AEnemy, MaxHealth);
+	DOREPLIFETIME(AEnemy, Health);
 }
 
 void AEnemy::SetWeaponCollisionVolume(class UBoxComponent* WeaponCollisionVolume)
@@ -270,7 +316,6 @@ void AEnemy::StoreHitWidget(UUserWidget* HitWidget, FVector HitLocation)
 				RemoveHitWidget(HitWidget);
 			}),
 		1.5f, false);
-
 }
 
 void AEnemy::RemoveHitWidget(class UUserWidget* HitWidget)
@@ -299,16 +344,7 @@ FVector AEnemy::TransformLocalToWorld(FVector LocalLocation)
 
 void AEnemy::OnAgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (OtherActor == nullptr) return;
-
-	if (auto Target = Cast<AGunsterCharacter>(OtherActor))
-	{
-		ShowBossHealthBar();
-		if (EnemyAIController)
-		{
-			EnemyAIController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Target);
-		}
-	}
+	//Reserved
 }
 
 
@@ -353,3 +389,16 @@ void AEnemy::OnWeaponCollisionSphereOverlap(UPrimitiveComponent* OverlappedCompo
 	}
 }
 
+void AEnemy::OnSeePawn(APawn* Pawn)
+{
+	if (Pawn == nullptr) return;
+
+	if (auto GunsterCharacter = Cast<AGunsterCharacter>(Pawn))
+	{
+		if (EnemyAIController)
+		{
+			EnemyAIController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), GunsterCharacter);
+			DrawDebugString(GetWorld(), GetActorLocation(), "Player Spotted", nullptr, FColor::Red, 2.f);
+		}
+	}
+}

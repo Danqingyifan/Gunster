@@ -1,11 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-#include "../Gunster.h"
 #include "Items/Weapon/Weapon.h"
+#include "../Gunster.h"
 #include "Player/GunsterCharacter.h"
 #include "Player/GunsterPlayerController.h"
 #include "Enemy/Enemy.h"
+#include "Interfaces/OnBulletHitInterface.h"
 
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystem.h"
@@ -33,6 +34,7 @@ AWeapon::AWeapon()
 	//For detect if Character should LineTrace the gun to pickup
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
 	CollisionBox->SetupAttachment(RootComponent);
+
 	CollisionBox->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 }
@@ -123,7 +125,7 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 			HeadShotMultiplier = WeaponDataRow->HeadShotMultiplier;
 			WeaponIcon = WeaponDataRow->WeaponIcon;
 			AmmoTypeIcon = WeaponDataRow->AmmoTypeIcon;
-			SetFireSound(WeaponDataRow->FireSound); 
+			SetFireSound(WeaponDataRow->FireSound);
 			SetSmokeTrail(WeaponDataRow->SmokeTrail);
 			SetWeaponMesh(WeaponDataRow->WeaponMesh);
 		}
@@ -193,7 +195,12 @@ FHitResult AWeapon::TrackTrajectory()
 	FVector BarrelEnd{ CrossHairEnd + (CrossHairTrace.ImpactPoint - BarrelStart).GetSafeNormal() * 10.f };
 	// Need one extra forward vector to make sure the bullet will hit the target
 
-	GetWorld()->LineTraceSingleByChannel(BarrelTrace, BarrelStart, BarrelEnd, ECC_PlayerWeaponChannel);
+	//No need to add an extra Trace Channel for Barrel Trace
+	FCollisionQueryParams BarrelParams;
+	BarrelParams.AddIgnoredActor(this);	
+
+	GetWorld()->LineTraceSingleByChannel(BarrelTrace, BarrelStart, BarrelEnd, ECC_PlayerWeaponChannel,BarrelParams);
+
 
 	FHitResult FireHit{ BarrelTrace };
 
@@ -207,6 +214,7 @@ FHitResult AWeapon::TrackTrajectory()
 		if (IOnBulletHitInterface* BulletHitInterface = Cast<IOnBulletHitInterface>(FireHit.GetActor())) // Check if the hit actor is a valid target
 		{
 			BulletHitInterface->OnBulletHit_Implementation(FireHit);
+
 			if (AEnemy* HitEnemy = Cast<AEnemy>(FireHit.GetActor()))
 			{
 				float Damage;
