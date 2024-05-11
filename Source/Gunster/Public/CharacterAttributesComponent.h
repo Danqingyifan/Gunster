@@ -17,6 +17,10 @@ public:
 	// Sets default values for this component's properties
 	UCharacterAttributesComponent();
 
+	UFUNCTION(BlueprintCallable, Category = "Attributes")
+	static UCharacterAttributesComponent* GetAttributesComponent(AActor* TargetActor);
+
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

@@ -22,6 +22,5 @@ class GUNSTER_API IOnBulletHitInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "BulletHit")
-	void OnBulletHit(const FHitResult& HitResult);
+	virtual void OnBulletHit(const FHitResult& HitResult) = 0;
 };

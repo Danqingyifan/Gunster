@@ -34,14 +34,21 @@ enum class EWeaponType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponDataTable :public FTableRowBase
+struct FWeaponInfoRow :public FTableRowBase
 {
 	GENERATED_BODY()
 
+	FWeaponInfoRow() 
+	{}
+
+	UPROPERTY(EditAnywhere ,BlueprintReadOnly)
+	FPrimaryAssetId WeaponId;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<AWeapon> WeaponClass;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString WeaponName;
 	//Combat 
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	uint8 ClipCapacity;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	uint8 StartingAmmo;
@@ -82,7 +89,7 @@ struct FWeaponDataTable :public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	class UTexture2D* AmmoTypeIcon;
 };
-
+ 
 UENUM(BlueprintType)
 enum class EWeaponState : uint8
 {
@@ -102,7 +109,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	
+
 public:
 	virtual void Tick(float DeltaTime) override;
 
@@ -165,7 +172,7 @@ private:
 	//DataTable
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = DataTable, meta = (AllowPrivateAccess = "true"))
 	class UDataTable* WeaponDataTable;
-	
+
 	//Weapon Properties
 	EWeaponState WeaponState;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapon Properties", meta = (AllowPrivateAccess = "true"))
@@ -180,7 +187,7 @@ private:
 	class UTexture2D* WeaponIcon;
 
 	//Ammo
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category ="Ammo", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo", meta = (AllowPrivateAccess = "true"))
 	int32 StartingAmmo; //The total amount of ammo the player has at the beginning
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ammo", meta = (AllowPrivateAccess = "true"))
 	int32 WeaponAmmo;	//The amount of ammo left in the clip

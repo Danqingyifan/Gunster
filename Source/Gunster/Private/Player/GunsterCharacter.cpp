@@ -8,6 +8,7 @@
 #include "Enemy/EnemyAIController.h"
 #include "InteractableComponent.h"
 #include "CharacterAttributesComponent.h"
+#include "Action/GunsterActionComponent.h"
 //Camera
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -24,6 +25,8 @@
 #include "Engine/StaticMeshActor.h"
 //Net
 #include "Net/UnrealNetwork.h"
+#include "Player/GunsterPlayerState.h"
+#include "AbilitySystemComponent.h"
 
 AGunsterCharacter::AGunsterCharacter()
 	:bIsAiming(false), bIsShooting(false), bIsReloading(false), IdleFOV(100.f), AimFOV(50.f), MaxHealth(100)
@@ -34,7 +37,8 @@ AGunsterCharacter::AGunsterCharacter()
 
 	InteractableComponent = CreateDefaultSubobject<UInteractableComponent>(TEXT("InteractableComponent"));
 	CharacterAttributesComponent = CreateDefaultSubobject<UCharacterAttributesComponent>(TEXT("CharacterAttributesComponent"));
-	
+	GunsterActionComponent = CreateDefaultSubobject<UGunsterActionComponent>(TEXT("GunsterActionComponent"));
+
 	SetReplicates(true);
 	SetReplicateMovement(true);
 }
@@ -150,7 +154,9 @@ void AGunsterCharacter::SetUpInput(UInputComponent* PlayerInputComponent)
 
 			EnhancedInputComponent->BindAction(GunsterController->DodgeAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Dodge);
 
-			EnhancedInputComponent->BindAction(GunsterController->SprintAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Sprint);
+			EnhancedInputComponent->BindAction(GunsterController->SprintAction, ETriggerEvent::Started, this, &AGunsterCharacter::Sprint);
+			EnhancedInputComponent->BindAction(GunsterController->SprintAction, ETriggerEvent::Completed, this, &AGunsterCharacter::StopSprint);
+
 
 			EnhancedInputComponent->BindAction(GunsterController->ReloadAction, ETriggerEvent::Triggered, this, &AGunsterCharacter::Reload);
 
@@ -195,6 +201,10 @@ void AGunsterCharacter::Look(const FInputActionValue& Value)
 
 void AGunsterCharacter::PullTrigger()
 {
+
+	GunsterActionComponent->StartActionByName(this, "PullTrigger");
+
+
 	if (EquippedWeapon && bIsAiming && EquippedWeapon->GetCanFire())
 	{
 		bIsShooting = true;
@@ -205,12 +215,14 @@ void AGunsterCharacter::PullTrigger()
 			AnimInstance->Montage_Play(StrafeMontage);
 			AnimInstance->Montage_JumpToSection(FName("Strafe"));
 		}
-
 	}
 }
 
 void AGunsterCharacter::ReleaseTrigger()
 {
+
+	GunsterActionComponent->StopActionByName(this, "PullTrigger");
+
 	if (EquippedWeapon)
 	{
 		EquippedWeapon->StopFire();
@@ -291,9 +303,16 @@ void AGunsterCharacter::Dodge()
 
 }
 
-void AGunsterCharacter::Sprint()
+void AGunsterCharacter::Sprint() 
 {
+	UE_LOG(LogTemp, Warning, TEXT("Sprint"));
+	GunsterActionComponent->StartActionByName(this, "Sprint");
+}
 
+void AGunsterCharacter::StopSprint()
+{
+	UE_LOG(LogTemp, Warning, TEXT("StopSprint"));
+	GunsterActionComponent->StopActionByName(this, "Sprint");
 }
 
 void AGunsterCharacter::Dash()
@@ -349,6 +368,11 @@ void AGunsterCharacter::AttachWeapon(AWeapon* Weapon, const USkeletalMeshSocket*
 	}
 }
 
+void AGunsterCharacter::OnBulletHit(const FHitResult& HitResult)
+{
+
+}
+
 float AGunsterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -369,6 +393,33 @@ float AGunsterCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 	return DamageAmount;
 }
 
+void AGunsterCharacter::Die()
+{
+	DisableInput(GunsterPlayerController);
+	if (bIsAiming)
+	{
+		bIsAiming = false;
+	}
+	if (auto AnimationInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimationInstance->Montage_Play(DeathMontage);
+		//PlayRate need to be set after Montage_Play
+		AnimationInstance->Montage_SetPlayRate(DeathMontage, 0.8f);
+		AnimationInstance->Montage_JumpToSection(FName("Death"));
+
+		SetLifeSpan(5.f);
+	}
+}
+
+void AGunsterCharacter::DeathFinish()
+{
+	GetMesh()->bPauseAnims = true;
+}
+
+
+
+//`````New Part`````````//
+
 //execuate before the implementation of the function
 //if true,will exe the implementation
 //if false,the client will call the function will be disconnected from the server
@@ -376,12 +427,12 @@ bool AGunsterCharacter::ServerRPCSpawnBox_Validate(int arg)
 {
 	if (arg > 100)
 		return false;
-	else 
+	else
 		return true;
 }
 
 void AGunsterCharacter::ServerRPCSpawnBox_Implementation(int arg)
-{ 
+{
 	if (HasAuthority())
 	{
 		if (!BoxMesh)
@@ -407,31 +458,41 @@ void AGunsterCharacter::ServerRPCSpawnBox_Implementation(int arg)
 }
 
 
-
-void AGunsterCharacter::OnBulletHit_Implementation(const FHitResult& HitResult)
+UAbilitySystemComponent* AGunsterCharacter::GetAbilitySystemComponent() const
 {
+	return nullptr;
+}
+
+
+
+void AGunsterCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	//Init ability actor info for the Server
+	InitAbilityActorInfo();
+}
+
+void AGunsterCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+	InitAbilityActorInfo();
 
 }
 
-void AGunsterCharacter::Die()
+void AGunsterCharacter::InitAbilityActorInfo()
 {
-	DisableInput(GunsterPlayerController);
-	if (bIsAiming)
-	{
-		bIsAiming = false;
-	}
-	if (auto AnimationInstance = GetMesh()->GetAnimInstance())
-	{
-		AnimationInstance->Montage_Play(DeathMontage);
-		//PlayRate need to be set after Montage_Play
-		AnimationInstance->Montage_SetPlayRate(DeathMontage, 0.8f);
-		AnimationInstance->Montage_JumpToSection(FName("Death"));
-
-		SetLifeSpan(5.f);
-	}
+	AGunsterPlayerState* GunsterPlayerState = GetPlayerState<AGunsterPlayerState>();
+	check(GunsterPlayerState);
+	GunsterPlayerState->GetAbilitySystemComponent()->InitAbilityActorInfo(GunsterPlayerState, this);
+	AbilitySystemComponent = GunsterPlayerState->GetAbilitySystemComponent();
+	AttributeSet = GunsterPlayerState->GetAttributeSet();
 }
 
-void AGunsterCharacter::DeathFinish()
+FVector AGunsterCharacter::GetPawnViewLocation() const
 {
-	GetMesh()->bPauseAnims = true;
+	if (FollowCamera)
+	{
+		return FollowCamera->GetComponentLocation();
+	}
+	return Super::GetPawnViewLocation();
 }

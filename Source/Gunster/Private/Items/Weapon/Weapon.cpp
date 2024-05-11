@@ -94,20 +94,20 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 	UDataTable* DataTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *WeaponDataTablePath));
 	if (DataTableObject)
 	{
-		FWeaponDataTable* WeaponDataRow = nullptr;
+		FWeaponInfoRow* WeaponDataRow = nullptr;
 		switch (WeaponType)
 		{
 		case EWeaponType::EWT_Pistol:
-			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("Pistol"), TEXT(""));
+			WeaponDataRow = DataTableObject->FindRow<FWeaponInfoRow>(FName("Pistol"), TEXT(""));
 			break;
 		case EWeaponType::EWT_Shotgun:
-			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("ShotGun"), TEXT(""));
+			WeaponDataRow = DataTableObject->FindRow<FWeaponInfoRow>(FName("ShotGun"), TEXT(""));
 			break;
 		case EWeaponType::EWT_SMG:
-			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("SMG"), TEXT(""));
+			WeaponDataRow = DataTableObject->FindRow<FWeaponInfoRow>(FName("SMG"), TEXT(""));
 			break;
 		case EWeaponType::EWT_Rifle:
-			WeaponDataRow = DataTableObject->FindRow<FWeaponDataTable>(FName("Rifle"), TEXT(""));
+			WeaponDataRow = DataTableObject->FindRow<FWeaponInfoRow>(FName("Rifle"), TEXT(""));
 			break;
 		case EWeaponType::EWT_MAX:
 			UE_LOG(LogTemp, Display, TEXT("WeaponType NOT SET"));
@@ -184,6 +184,11 @@ FHitResult AWeapon::TrackTrajectory()
 	FHitResult CrossHairTrace;
 	FVector CrossHairStart{ CrossHairWorldPosition };
 	FVector CrossHairEnd{ CrossHairStart + CrossHairWorldDirection * 3'000 };
+	//Add some random offset to CrossHairEnd
+	
+	CrossHairEnd.X += FMath::RandRange(-50.f, 50.f);
+	CrossHairEnd.Y += FMath::RandRange(-50.f, 50.f);
+
 	GetWorld()->LineTraceSingleByChannel(CrossHairTrace, CrossHairStart, CrossHairEnd, ECC_PlayerWeaponChannel);
 	if (CrossHairTrace.bBlockingHit)
 	{
@@ -213,7 +218,7 @@ FHitResult AWeapon::TrackTrajectory()
 		DrawDebugSphere(GetWorld(), FireHit.ImpactPoint, 15.f, 24, FColor::Green, false, 3.0f);
 		if (IOnBulletHitInterface* BulletHitInterface = Cast<IOnBulletHitInterface>(FireHit.GetActor())) // Check if the hit actor is a valid target
 		{
-			BulletHitInterface->OnBulletHit_Implementation(FireHit);
+			BulletHitInterface->OnBulletHit(FireHit);
 
 			if (AEnemy* HitEnemy = Cast<AEnemy>(FireHit.GetActor()))
 			{

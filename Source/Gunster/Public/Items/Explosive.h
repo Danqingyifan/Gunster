@@ -26,7 +26,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void OnBulletHit_Implementation(const FHitResult& HitResult) override;
+	virtual void OnBulletHit(const FHitResult& HitResult) override;
 
 	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastRPCExplode(const FHitResult& HitResult);

@@ -42,3 +42,12 @@ bool UCharacterAttributesComponent::ApplyHealthChange(float DeltaHealth)
 	return true;
 }
 
+
+UCharacterAttributesComponent* UCharacterAttributesComponent::GetAttributesComponent(AActor* TargetActor)
+{
+	if (TargetActor)
+	{
+		return Cast<UCharacterAttributesComponent>(TargetActor->GetComponentByClass(UCharacterAttributesComponent::StaticClass()));
+	}
+	return nullptr;
+}

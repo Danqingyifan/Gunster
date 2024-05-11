@@ -50,7 +50,7 @@ void AExplosive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
 }
 
 //RepNotify
-void AExplosive::OnBulletHit_Implementation(const FHitResult& HitResult)
+void AExplosive::OnBulletHit(const FHitResult& HitResult)
 {
 	bExploded = true;
 	if (HasAuthority())

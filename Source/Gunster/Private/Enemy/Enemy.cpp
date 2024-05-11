@@ -75,6 +75,12 @@ void AEnemy::PostInitializeComponents()
 
 }
 
+void AEnemy::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	EnemyAIController = Cast<AEnemyAIController>(NewController);
+}
+
 // Called when the game starts or when spawned
 void AEnemy::BeginPlay()
 {	
@@ -89,7 +95,7 @@ void AEnemy::BeginPlay()
 
 	FVector WorldPatrolPoint = TransformLocalToWorld(PatrolPoint);
 	// Set the AI Controller
-	EnemyAIController = Cast<AEnemyAIController>(GetController());
+	
 	if (EnemyAIController)
 	{
 		EnemyAIController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
@@ -113,7 +119,7 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
-void AEnemy::OnBulletHit_Implementation(const FHitResult& HitResult)
+void AEnemy::OnBulletHit(const FHitResult& HitResult)
 {
 	if (HitSound)
 	{
@@ -141,7 +147,7 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AC
 
 	if (EnemyAIController)
 	{
-		EnemyAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+		EnemyAIController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), EventInstigator->GetPawn());
 	}
 
 	if (Health - DamageAmount <= 0)
@@ -205,8 +211,7 @@ void AEnemy::DeathFinish()
 {
 	HideBossHealthBar();
 	GetMesh()->bPauseAnims = true;
-	FTimerHandle DeathTimer;
-	GetWorld()->GetTimerManager().SetTimer(DeathTimer, ([this]() { Destroy(); }), 2.f, false);
+	SetLifeSpan(2.0f);
 }
 
 
@@ -235,6 +240,8 @@ void AEnemy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 	DOREPLIFETIME(AEnemy, MaxHealth);
 	DOREPLIFETIME(AEnemy, Health);
 }
+
+
 
 void AEnemy::SetWeaponCollisionVolume(class UBoxComponent* WeaponCollisionVolume)
 {

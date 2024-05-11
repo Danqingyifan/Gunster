@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Interfaces/OnBulletHitInterface.h"
+#include "AbilitySystemInterface.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -11,7 +12,7 @@
 
 // Character play FiringAction animation According to this state enum
 UCLASS(config = Game)
-class AGunsterCharacter : public ACharacter, public IOnBulletHitInterface
+class AGunsterCharacter : public ACharacter, public IOnBulletHitInterface, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
@@ -37,8 +38,10 @@ private:
 	class AGunsterPlayerController* GunsterPlayerController;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interact", meta = (AllowPrivateAccess = "true"))
 	class UInteractableComponent* InteractableComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapoon", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Action", meta = (AllowPrivateAccess = "true"))
 	class UCharacterAttributesComponent* CharacterAttributesComponent;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Action", meta = (AllowPrivateAccess = "true"))
+	class UGunsterActionComponent* GunsterActionComponent;
 
 	//Montage Segment
 	class UAnimInstance* AnimInstance;
@@ -86,6 +89,7 @@ public:
 	void AimLocomotion(bool isAiming);
 	void Dodge();
 	void Sprint();
+	void StopSprint();
 	void Dash();
 	void SwitchWeapon();
 	void FinishSwitchWeapon();
@@ -121,11 +125,22 @@ public:
 	FORCEINLINE bool GetIsAiming() const { return bIsAiming; }
 	FORCEINLINE bool GetIsShooting() const { return bIsShooting; }
 	FORCEINLINE class USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
-	void OnBulletHit_Implementation(const FHitResult& HitResult) override;
+	void OnBulletHit(const FHitResult& HitResult) override;
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+
+protected:
+	UPROPERTY()
+	TObjectPtr<class UAbilitySystemComponent> AbilitySystemComponent;
+	UPROPERTY()
+	TObjectPtr<class UAttributeSet> AttributeSet;
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void OnRep_PlayerState() override;
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	void InitAbilityActorInfo();
+	virtual FVector GetPawnViewLocation() const override;
 public:
-	UFUNCTION(Server, Unreliable, WithValidation,BlueprintCallable)
+	UFUNCTION(Server, Unreliable, WithValidation, BlueprintCallable)
 	void ServerRPCSpawnBox(int arg);
 	UPROPERTY(EditAnywhere)
 	class UStaticMesh* BoxMesh;
